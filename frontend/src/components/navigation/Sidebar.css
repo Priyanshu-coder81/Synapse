@@ -1,6 +1,6 @@
 .guild-sidebar {
   width: 72px;
-  height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-guilds);
   display: flex;
   flex-direction: column;

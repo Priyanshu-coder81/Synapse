@@ -25,7 +25,7 @@ const GuildView: React.FC = () => {
     }, [guildId, channelId, currentServer]);
 
     return (
-        <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
+        <div style={{ display: 'flex', width: '100%', height: '100dvh' }}>
             <ChannelSidebar />
             {channelId ? (
                 <>

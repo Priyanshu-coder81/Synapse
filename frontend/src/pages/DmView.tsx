@@ -4,7 +4,7 @@ import ChatArea from '../components/chat/ChatArea';
 
 const DmView: React.FC = () => {
     return (
-        <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
+        <div style={{ display: 'flex', width: '100%', height: '100dvh' }}>
             {/* Context Sidebar */}
             <DmSidebar />
             

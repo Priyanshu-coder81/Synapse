@@ -6,7 +6,7 @@
 
 .auth-wrapper {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   width: 100vw;
   background: linear-gradient(-45deg, #090a0f, #1a1c29, #231f41, #13151a);
   background-size: 400% 400%;
