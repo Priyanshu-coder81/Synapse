@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String          @id @default(uuid())
+  username         String          @unique
+  email            String          @unique
+  password         String
+  avatarUrl        String?
+  createdAt        DateTime        @default(now())
+
+  // Relations
+  ownedGuilds      Guild[]         @relation("GuildOwner")
+  memberships      GuildMember[]
+  messages         Message[]
+  dmInitiated      DirectMessage[] @relation("User1")
+  dmReceived       DirectMessage[] @relation("User2")
+}
+
+model Guild {
+  id               String          @id @default(uuid())
+  name             String
+  iconUrl          String?
+  inviteCode       String          @unique @default(cuid())
+  ownerId          String
+  createdAt        DateTime        @default(now())
+
+  owner            User            @relation("GuildOwner", fields: [ownerId], references: [id])
+  members          GuildMember[]
+  channels         Channel[]
+}
+
+enum Role {
+  OWNER
+  MEMBER
+}
+
+model GuildMember {
+  id               String          @id @default(uuid())
+  userId           String
+  guildId          String
+  role             Role
+  joinedAt         DateTime        @default(now())
+
+  user             User            @relation(fields: [userId], references: [id])
+  guild            Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildId])
+}
+
+model Channel {
+  id               String          @id @default(uuid())
+  name             String
+  topic            String?
+  guildId          String
+  createdAt        DateTime        @default(now())
+
+  guild            Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  messages         Message[]
+}
+
+model Message {
+  id               String          @id @default(uuid())
+  content          String          @db.Text
+  senderId         String
+  channelId        String?
+  dmThreadId       String?
+  edited           Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  sender           User            @relation(fields: [senderId], references: [id])
+  channel          Channel?        @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  dmThread         DirectMessage?  @relation(fields: [dmThreadId], references: [id], onDelete: Cascade)
+  attachment       Attachment?
+}
+
+model DirectMessage {
+  id               String          @id @default(uuid())
+  user1Id          String
+  user2Id          String
+  createdAt        DateTime        @default(now())
+
+  user1            User            @relation("User1", fields: [user1Id], references: [id])
+  user2            User            @relation("User2", fields: [user2Id], references: [id])
+  messages         Message[]
+
+  @@unique([user1Id, user2Id])
+}
+
+model Attachment {
+  id               String          @id @default(uuid())
+  messageId        String          @unique
+  fileUrl          String
+  publicId         String
+  fileName         String
+  fileType         String
+  fileSize         Int
+
+  message          Message         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
