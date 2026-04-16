@@ -10,7 +10,7 @@ const app = express();
 const httpServer = createServer(app);
 
 // Allow frontend
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }));
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'https://synapse.neuralnote.online', 'http://synapse.neuralnote.online'], credentials: true }));
 app.use(express.json());
 
 const JWT_SECRET = 'super_secret_mock_key';
@@ -280,7 +280,7 @@ app.post('/api/friends/accept', requireAuth, (req, res) => {
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://synapse.neuralnote.online', 'http://synapse.neuralnote.online'],
     methods: ['GET', 'POST'],
     credentials: true,
   }
