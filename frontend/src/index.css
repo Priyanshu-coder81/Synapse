@@ -108,4 +108,20 @@ a:hover {
   height: 100vh;
   width: 100vw;
   background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .guild-sidebar {
+    display: none; /* Hide guild bar on mobile by default */
+  }
+  .dm-sidebar, .channel-sidebar {
+    width: 100% !important;
+    position: absolute;
+    z-index: 10;
+    display: none; /* Hide secondary sidebar on mobile */
+  }
+  .chat-container {
+    width: 100%;
+  }
 }

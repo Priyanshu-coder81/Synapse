@@ -154,6 +154,20 @@
   transform: scale(1.1);
 }
 
+@media (max-width: 480px) {
+  .chat-input-actions {
+    gap: 8px;
+    margin-left: 8px;
+  }
+  .action-icon {
+    width: 20px;
+    height: 20px;
+  }
+  .chat-topbar-title {
+    font-size: 14px;
+  }
+}
+
 /* Pickers */
 .chat-pickers-container {
   position: absolute;
@@ -162,16 +176,31 @@
   z-index: 100;
   display: flex;
   gap: 16px;
+  max-width: calc(100vw - 32px);
+}
+@media (max-width: 768px) {
+  .chat-pickers-container {
+    right: 0;
+    left: 0;
+    justify-content: center;
+    bottom: 70px;
+  }
 }
 .gif-picker {
   background: var(--bg-secondary);
   border-radius: 8px;
   padding: 16px;
   width: 320px;
-  height: 450px;
+  height: 400px;
+  max-height: 50vh;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
+}
+@media (max-width: 360px) {
+  .gif-picker {
+    width: 280px;
+  }
 }
 .gif-picker-header {
   color: white;
