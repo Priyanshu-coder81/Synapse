@@ -1,71 +1,64 @@
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import { io, Socket } from 'socket.io-client';
 
 class WebSocketService {
-  private client: Client | null = null;
+  private socket: Socket | null = null;
 
   connect(token: string, onConnectCallback?: () => void) {
-    // Prevent duplicate connections
-    if (this.client && this.client.active) return;
+    // Prevent duplicate connections inherently
+    if (this.socket && this.socket.connected) return;
 
-    this.client = new Client({
-      // Hooking up the SockJS fallback since Spring Boot uses withSockJS()
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
-      },
-      debug: (msg) => console.log('STOMP: ' + msg),
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
+    this.socket = io('http://localhost:8080', {
+      auth: { token }, // Push JWT securely
+      withCredentials: true
     });
 
-    this.client.onConnect = (frame) => {
-      console.log('Successfully connected to STOMP broker.');
+    this.socket.on('connect', () => {
+      console.log('Successfully connected to Express Socket.io backend.');
       if (onConnectCallback) onConnectCallback();
-    };
+    });
 
-    this.client.onStompError = (frame) => {
-      console.error('Broker reported error: ' + frame.headers['message']);
-      console.error('Additional details: ' + frame.body);
-    };
-
-    this.client.activate();
+    this.socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+    });
   }
 
   subscribeToChannel(channelId: string, callback: (message: any) => void) {
-    // Dynamic channel subscription (e.g. /topic/channel/123)
-    if (!this.client || !this.client.connected) {
-      console.warn("Cannot subscribe: STOMP client is not connected.");
+    if (!this.socket) {
+      console.warn("Cannot subscribe: Socket is not connected.");
       return null;
     }
     
-    return this.client.subscribe(`/topic/channel/${channelId}`, (msg) => {
-      const parsedBody = JSON.parse(msg.body);
-      callback(parsedBody);
-    });
+    // Explicitly join real-time room array
+    this.socket.emit('join_channel', channelId);
+    
+    const listener = (msg: any) => callback(msg);
+    this.socket.on('receive_message', listener);
+
+    return {
+      unsubscribe: () => {
+        this.socket?.off('receive_message', listener);
+      }
+    };
   }
 
   sendMessage(channelId: string, content: string) {
-    if (!this.client || !this.client.connected) {
-      console.warn("Cannot send message: STOMP client is not connected.");
+    if (!this.socket || !this.socket.connected) {
+      console.warn("Cannot send message: Socket is not connected.");
       return;
     }
-
-    this.client.publish({
-      destination: '/app/chat.send',
-      body: JSON.stringify({ channelId, content })
-    });
+    
+    // Dispatch identical object directly backwards replacing STOMP
+    this.socket.emit('send_message', { channelId, content });
   }
 
   disconnect() {
-    if (this.client) {
-      this.client.deactivate();
-      this.client = null;
-      console.log("Disconnected from STOMP broker.");
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+      console.log("Disconnected from Socket.io broker.");
     }
   }
 }
 
-// Export singleton instance
+// Export singleton instance exactly matching original frontend hook implementation
 export const wsClient = new WebSocketService();

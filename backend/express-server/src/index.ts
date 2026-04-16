@@ -4,12 +4,15 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+import { authRouter } from './routes/auth';
+import { guildRouter } from './routes/guilds';
+import { channelRouter } from './routes/channels';
+import { setupSockets } from './sockets';
+
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
-
-import { authRouter } from './routes/auth';
 
 // Cross-Origin configuration matching the Vite setup
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
@@ -17,6 +20,8 @@ app.use(express.json());
 
 // Bootloaded API Sub-Routers
 app.use('/api/auth', authRouter);
+app.use('/api/guilds', guildRouter);
+app.use('/api/channels', channelRouter);
 
 // Main WebSocket Real-time Engine
 const io = new Server(httpServer, {
@@ -27,17 +32,12 @@ const io = new Server(httpServer, {
   }
 });
 
+// Pass control to the orchestrator
+setupSockets(io);
+
 // Basic check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Express server is alive!' });
-});
-
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
 });
 
 const PORT = process.env.PORT || 8080;
