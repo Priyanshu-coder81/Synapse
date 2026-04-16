@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { PlusCircle, Search, Hash, Gift, Sticker, Smile } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
+import axiosClient from '../../api/axiosClient';
 import './ChatArea.css';
 
 interface Message {
@@ -19,6 +20,19 @@ const ChatArea: React.FC = () => {
     
     const { isAuthenticated } = useAuthStore();
     const token = localStorage.getItem('accessToken');
+
+    useEffect(() => {
+        if (!channelId) return;
+        const fetchHistory = async () => {
+             try {
+                 const res = await axiosClient.get(`/channels/${channelId}/messages`);
+                 if (Array.isArray(res.data)) {
+                     setMessages(res.data);
+                 }
+             } catch(e) {}
+        };
+        fetchHistory();
+    }, [channelId]);
 
     useEffect(() => {
         if (isAuthenticated && token) {
@@ -80,16 +94,7 @@ const ChatArea: React.FC = () => {
                    </div>
                  ))}
                  
-                 <div className="message-wrapper">
-                      <div className="message-avatar">W</div>
-                      <div className="message-content">
-                          <div className="message-header">
-                              <span className="message-author">Wumpus</span>
-                              <span className="message-timestamp">Today at 10:41 AM</span>
-                          </div>
-                          <div className="message-body">Welcome to the channel! Try checking the User Panel in the bottom left, or typing a message down below!</div>
-                      </div>
-                 </div>
+                  {/* System default placeholder removed */}
             </div>
 
             <div className="chat-input-wrapper">

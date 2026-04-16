@@ -1,0 +1,81 @@
+.auth-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 64px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.auth-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.auth-navbar-brand:hover {
+  opacity: 0.8;
+}
+
+.brand-icon {
+  color: var(--brand);
+  filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.4));
+}
+
+.brand-text {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.auth-navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.auth-navbar-links a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.auth-navbar-links a:hover {
+  color: var(--brand);
+}
+
+.nav-btn-secondary {
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+.nav-btn-primary {
+  background-color: white;
+  color: black !important;
+  padding: 10px 24px;
+  border-radius: 24px;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.nav-btn-primary:hover {
+  background-color: var(--brand);
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(88, 101, 242, 0.4);
+}
+
+@media (max-width: 768px) {
+  .auth-navbar { padding: 16px 24px; }
+  .auth-navbar-links { display: none; }
+}

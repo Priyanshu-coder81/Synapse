@@ -1,59 +1,96 @@
-import React from 'react';
-import { Users, Smile, Plus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Users, Plus, Mic, Headphones, Settings } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
 import './DmSidebar.css';
 
+interface Friend {
+  id: string; // The request ID
+  userId: string; // The actual target's ID
+  username: string;
+  status: string;
+}
+
 const DmSidebar: React.FC = () => {
-  const friends = [
-    { id: '1', name: 'Wumpus', status: 'online' },
-    { id: '2', name: 'Yatha', status: 'dnd' },
-    { id: '3', name: 'Java Master ☕', status: 'idle' }
-  ];
+  const { username, logout, userId } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [friends, setFriends] = useState<Friend[]>([]);
+
+  useEffect(() => {
+     const fetchFriends = async () => {
+       try {
+         const res = await axiosClient.get('/friends');
+         setFriends(res.data.filter((f: Friend) => f.status === 'ACCEPTED'));
+       } catch (e) {}
+     };
+     fetchFriends();
+     // Safe auto-polling loop
+     const int = setInterval(fetchFriends, 2000);
+     return () => clearInterval(int);
+  }, []);
+
+  // Guarantee symmetrical channel keys regardless of who initiated the DM!
+  const getSharedDmId = (otherId: string) => {
+     const p1 = userId || '';
+     const p2 = otherId || '';
+     return p1 > p2 ? `${p1}_${p2}` : `${p2}_${p1}`;
+  };
 
   return (
     <aside className="dm-sidebar">
-      {/* Search Header */}
       <div className="dm-sidebar-header">
         <div className="dm-search-bar">Find or start a conversation</div>
       </div>
 
-      {/* Main Nav Items */}
       <div className="dm-nav-list">
-        <div className="dm-nav-item active">
+        <div className={`dm-nav-item ${location.pathname === '/channels/@me' ? 'active' : ''}`} onClick={() => navigate('/channels/@me')}>
           <Users size={20} />
           <span>Friends</span>
         </div>
-        <div className="dm-nav-item">
-          <Smile size={20} />
-          <span>Nitro</span>
-        </div>
       </div>
 
-      {/* Direct Messages List */}
       <div className="dm-header-text">
         <span>DIRECT MESSAGES</span>
         <Plus size={16} style={{ cursor: 'pointer' }} />
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', marginTop: '8px' }}>
-        {friends.map(friend => (
-          <div key={friend.id} className="dm-user-item">
-            <div className="dm-avatar">
-              <div className={`dm-status ${friend.status}`}></div>
+        {friends.map(friend => {
+          const sharedDmId = getSharedDmId(friend.userId);
+          const isActive = location.pathname === `/channels/@me/${sharedDmId}`;
+          
+          return (
+            <div 
+               key={friend.id} 
+               className={`dm-user-item ${isActive ? 'active' : ''}`}
+               onClick={() => navigate(`/channels/@me/${sharedDmId}`)}
+            >
+              <div className="dm-avatar">
+                <div className="dm-status online"></div>
+              </div>
+              <div className="dm-user-name">{friend.username}</div>
             </div>
-            <div className="dm-user-name">{friend.name}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       
-      {/* User settings bar placeholder for the future */}
-      <div style={{ height: '52px', backgroundColor: '#232428', flexShrink: 0, padding: '0 8px', display: 'flex', alignItems: 'center' }}>
-        <div className="dm-avatar" style={{width: '32px', height: '32px'}}>
-            <div className="dm-status online" style={{ borderColor: '#232428' }}></div>
-        </div>
-        <div style={{marginLeft: '8px', flex: 1}}>
-           <div style={{fontSize: '14px', fontWeight: 'bold', color: 'var(--text-header)'}}>You</div>
-           <div style={{fontSize: '11px', color: 'var(--text-muted)'}}>Online</div>
-        </div>
+      {/* Dynamic Authorized User Dock matching ChannelSidebar */}
+      <div className="user-profile-panel">
+         <div className="user-profile-avatar">
+             {username ? username.charAt(0).toUpperCase() : 'U'}
+             <div className="user-profile-status" />
+         </div>
+         <div className="user-profile-info">
+             <div className="user-name">{username || 'User'}</div>
+             <div className="user-tag">Online</div>
+         </div>
+         <div className="user-profile-controls">
+             <Mic size={20} className="control-icon" />
+             <Headphones size={20} className="control-icon" />
+             <Settings size={20} className="control-icon" onClick={() => navigate('/settings')} title="User Settings" />
+         </div>
       </div>
     </aside>
   );

@@ -4,23 +4,37 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Layout from './layout/Layout';
 import DmHub from './pages/DmHub';
+import DmView from './pages/DmView';
 import GuildView from './pages/GuildView';
+import UserProfile from './pages/UserProfile';
+import { useAuthStore } from './store/useAuthStore';
+
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
 
 const App: React.FC = () => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Auth Routes: Don't allow logged-in users to hit them */}
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/channels/@me" replace /> : <Login />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/channels/@me" replace /> : <Register />} />
         
-        {/* Main App Layout */}
-        <Route path="/" element={<Layout />}>
+        {/* Fullscreen Protected Views */}
+        <Route path="/settings" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+
+        {/* Protected App Layout */}
+        <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
           {/* Redirect base to DM Hub */}
           <Route index element={<Navigate to="/channels/@me" replace />} />
           
           {/* Direct Messages / Friends Hub */}
           <Route path="channels/@me" element={<DmHub />} />
+          <Route path="channels/@me/:channelId" element={<DmView />} />
           
           {/* Server View */}
           <Route path="channels/:guildId" element={<GuildView />} />

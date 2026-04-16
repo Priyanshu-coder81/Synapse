@@ -7,10 +7,10 @@ const MembersList: React.FC = () => {
             <div className="members-category">ONLINE — 1</div>
             <div className="member-item">
                  <div className="member-avatar">
-                     W
+                     A
                      <div className="member-status online" />
                  </div>
-                 <div className="member-name">Wumpus</div>
+                 <div className="member-name">Admin</div>
             </div>
             
             <div className="members-category" style={{ marginTop: '16px' }}>OFFLINE — 2</div>
