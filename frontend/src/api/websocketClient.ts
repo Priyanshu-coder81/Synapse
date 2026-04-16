@@ -4,9 +4,8 @@ class WebSocketService {
   private socket: Socket | null = null;
 
   connect(token: string, onConnectCallback?: () => void) {
-    // Prevent duplicate connections
-    if (this.socket && this.socket.connected) {
-      if (onConnectCallback) onConnectCallback();
+    if (this.socket) {
+      if (this.socket.connected && onConnectCallback) onConnectCallback();
       return;
     }
 
@@ -51,8 +50,8 @@ class WebSocketService {
   }
 
   sendMessage(channelId: string, content: string) {
-    if (!this.socket || !this.socket.connected) {
-      console.warn("Cannot send message: Socket is not connected.");
+    if (!this.socket) {
+      console.warn("Cannot send message: Socket is null.");
       return;
     }
     

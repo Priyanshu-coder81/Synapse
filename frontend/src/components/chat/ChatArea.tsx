@@ -80,7 +80,10 @@ const ChatArea: React.FC = () => {
 
         const subscription = wsClient.subscribeToChannel(channelId, (newMsg: Message) => {
             if (newMsg.channelId === channelIdRef.current) {
-                setMessages(prev => [newMsg, ...prev]);
+                setMessages(prev => {
+                    if (prev.find(m => m.id === newMsg.id || m.content === newMsg.content && m.senderUsername === newMsg.senderUsername && Date.now() - new Date(m.createdAt).getTime() < 2000)) return prev;
+                    return [newMsg, ...prev];
+                });
             }
         });
 
@@ -93,7 +96,19 @@ const ChatArea: React.FC = () => {
     const handleSendMessage = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && msg.trim() !== '') {
             if (channelId) {
-                wsClient.sendMessage(channelId, msg.trim());
+                const text = msg.trim();
+                wsClient.sendMessage(channelId, text);
+                
+                // Optimistic UI update
+                const optimisticMsg: Message = {
+                    id: Date.now().toString(),
+                    senderUsername: useAuthStore.getState().user?.username || 'You',
+                    content: text,
+                    createdAt: new Date().toISOString(),
+                    channelId: channelId
+                };
+                setMessages(prev => [optimisticMsg, ...prev]);
+                
                 setMsg(""); 
             }
         }
@@ -102,6 +117,19 @@ const ChatArea: React.FC = () => {
     const handleSendGif = (url: string) => {
         if (channelId) {
             wsClient.sendMessage(channelId, url);
+
+            // Optimistic UI update
+            const optimisticMsg: Message = {
+                id: Date.now().toString(),
+                senderUsername: useAuthStore.getState().user?.username || 'You',
+                content: url,
+                createdAt: new Date().toISOString(),
+                channelId: channelId
+            };
+            setMessages(prev => {
+                if (prev.find(m => m.id === optimisticMsg.id || m.content === url && m.senderUsername === optimisticMsg.senderUsername && Date.now() - new Date(m.createdAt).getTime() < 2000)) return prev;
+                return [optimisticMsg, ...prev];
+            });
         }
         setShowGifPicker(false);
     };
