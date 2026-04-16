@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ['synapse.neuralnote.online']
+    host: true,
+    allowedHosts: ['synapse.neuralnote.online', '.neuralnote.online']
   }
 })
