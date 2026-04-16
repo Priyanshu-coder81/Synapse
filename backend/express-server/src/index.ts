@@ -9,9 +9,14 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
+import { authRouter } from './routes/auth';
+
 // Cross-Origin configuration matching the Vite setup
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
+
+// Bootloaded API Sub-Routers
+app.use('/api/auth', authRouter);
 
 // Main WebSocket Real-time Engine
 const io = new Server(httpServer, {
