@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Premium Dark Theme Palette */
+  --bg-primary: #1e1f22; /* Main chat area */
+  --bg-secondary: #2b2d31; /* Server/DM sidebar */
+  --bg-tertiary: #1e1f22; /* Inner sidebars */
+  --bg-quaternary: #313338; /* Message input / selected elements */
+  
+  --bg-guilds: #111214; /* Leftmost server bar */
+  
+  --text-normal: #dbdee1;
+  --text-muted: #949ba4;
+  --text-header: #f2f3f5;
+  
+  --brand: #5865f2;     /* Blurple */
+  --brand-hover: #4752c4;
+  
+  --button-danger: #da373c;
+  --button-danger-hover: #a12828;
+  
+  --green: #23a559;
+  --green-hover: #1d884a;
+
+  /* Modals / Cards */
+  --bg-modal: #313338;
+  --input-bg: #1e1f22;
+  
+  --font-primary: 'Inter', sans-serif;
+  --transition-fast: 0.15s ease-in-out;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 16px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-normal);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, button, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Base Input styling */
+.text-input {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--input-bg);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-normal);
+  font-size: 14px;
+  transition: border-color var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.text-input:focus {
+  border-color: var(--brand);
+}
+
+/* Base button */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--brand);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--brand-hover);
+}
+
+/* Utility to ensure app fills screen */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-primary);
+}

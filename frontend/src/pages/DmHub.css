@@ -1,0 +1,91 @@
+.dm-hub-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+.dm-main-area {
+  flex: 1;
+  background-color: var(--bg-tertiary); /* Deep grey background for messages area */
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-topbar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #111214; 
+  gap: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.dm-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-header);
+  font-weight: 600;
+  margin-right: 8px;
+  font-size: 15px;
+}
+
+.topbar-separator {
+  width: 1px;
+  height: 24px;
+  background-color: var(--bg-quaternary);
+}
+
+.dm-topbar-nav {
+  display: flex;
+  gap: 16px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dm-topbar-nav span {
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.dm-topbar-nav span:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-normal);
+}
+
+.dm-topbar-nav span.active {
+  background-color: var(--bg-quaternary);
+  color: white;
+}
+
+.dm-topbar-nav span.add-friend {
+  background-color: var(--green);
+  color: white;
+}
+
+.dm-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.empty-state-img {
+  width: 380px;
+  height: 220px;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, #1e1f22 100%);
+  border-radius: 12px;
+  border: 1px dashed var(--bg-quaternary);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-header);
+  font-weight: bold;
+}

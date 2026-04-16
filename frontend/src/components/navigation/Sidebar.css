@@ -1,0 +1,116 @@
+.guild-sidebar {
+  width: 72px;
+  height: 100vh;
+  background-color: var(--bg-guilds);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 8px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.guild-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.guild-item-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* The visual pill that shows selection state */
+.guild-pill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  background-color: var(--text-normal);
+  border-radius: 0 4px 4px 0;
+  transition: all var(--transition-fast);
+}
+
+.guild-pill.inactive {
+  height: 0px;
+  opacity: 0;
+}
+
+/* When wrapper is hovered and it's inactive, show a small pill */
+.guild-item-wrapper:hover .guild-pill.inactive {
+  height: 20px;
+  opacity: 1;
+}
+
+.guild-pill.active {
+  height: 40px;
+  opacity: 1;
+}
+
+/* The actual icon button */
+.guild-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px; /* Circle by default */
+  background-color: var(--bg-quaternary);
+  color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.guild-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.guild-item-wrapper:hover .guild-icon {
+  border-radius: 16px; /* Squircle jump */
+  background-color: var(--brand);
+  color: white;
+}
+
+.guild-icon.active {
+  border-radius: 16px;
+  background-color: var(--brand);
+  color: white;
+}
+
+/* Add Server Button Specific */
+.add-server-btn:hover {
+  background-color: var(--green) !important;
+  color: white !important;
+  border-color: var(--green) !important;
+}
+.add-server-btn {
+  border: 1px dashed var(--green);
+  background-color: transparent !important;
+  color: var(--green);
+}
+
+/* Discover button */
+.discover-btn {
+  background-color: var(--bg-quaternary) !important;
+  color: var(--green) !important;
+}
+.discover-btn:hover {
+  background-color: var(--green) !important;
+  color: white !important;
+}
+
+.guild-separator {
+  height: 2px;
+  width: 32px;
+  background-color: var(--bg-quaternary);
+  border-radius: 1px;
+  margin: 4px 0;
+}

@@ -1,0 +1,118 @@
+.dm-sidebar {
+  width: 240px;
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  flex-shrink: 0;
+}
+
+.dm-sidebar-header {
+  height: 48px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #1e1f22; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.dm-search-bar {
+  background-color: var(--bg-primary);
+  border-radius: 4px;
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dm-nav-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dm-nav-item:hover {
+  background-color: var(--bg-quaternary);
+  color: var(--text-normal);
+}
+
+.dm-nav-item.active {
+  background-color: var(--bg-quaternary);
+  color: white;
+}
+
+.dm-header-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 18px 16px 4px 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.dm-header-text svg:hover {
+  color: var(--text-header);
+}
+
+.dm-user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  margin: 0 8px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.dm-user-item:hover {
+  background-color: var(--bg-quaternary);
+  color: var(--text-normal);
+}
+
+.dm-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: var(--brand);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dm-status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-secondary);
+}
+
+.dm-status.online { background-color: var(--green); }
+.dm-status.idle { background-color: #f0b232; }
+.dm-status.dnd { background-color: #f23f43; }
+
+.dm-user-name {
+  font-size: 15px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
