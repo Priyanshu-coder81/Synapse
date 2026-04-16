@@ -102,7 +102,7 @@ const ChatArea: React.FC = () => {
                 // Optimistic UI update
                 const optimisticMsg: Message = {
                     id: Date.now().toString(),
-                    senderUsername: useAuthStore.getState().user?.username || 'You',
+                    senderUsername: useAuthStore.getState().username || 'Unknown',
                     content: text,
                     createdAt: new Date().toISOString(),
                     channelId: channelId
@@ -121,7 +121,7 @@ const ChatArea: React.FC = () => {
             // Optimistic UI update
             const optimisticMsg: Message = {
                 id: Date.now().toString(),
-                senderUsername: useAuthStore.getState().user?.username || 'You',
+                senderUsername: useAuthStore.getState().username || 'Unknown',
                 content: url,
                 createdAt: new Date().toISOString(),
                 channelId: channelId
