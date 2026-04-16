@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  position: relative;
 }
 .chat-topbar {
   height: 48px;
@@ -103,6 +104,13 @@
   font-size: 15px;
   line-height: 1.375rem;
   white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.message-gif {
+  max-width: 300px;
+  border-radius: 8px;
+  margin-top: 4px;
+  display: block;
 }
 .chat-input-wrapper {
   padding: 0 16px 24px 16px;
@@ -144,4 +152,46 @@
 .action-icon:hover {
   color: var(--text-normal);
   transform: scale(1.1);
+}
+
+/* Pickers */
+.chat-pickers-container {
+  position: absolute;
+  bottom: 80px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  gap: 16px;
+}
+.gif-picker {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  width: 320px;
+  height: 450px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+}
+.gif-picker-header {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.gif-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  overflow-y: auto;
+}
+.gif-item {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.gif-item:hover {
+  transform: scale(1.05);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
@@ -8,6 +8,11 @@ const UserProfile: React.FC = () => {
     const { username, logout } = useAuthStore();
     const navigate = useNavigate();
     const [showEmail, setShowEmail] = useState(false);
+    
+    // Edit Profile State
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     // Tab State
     const [activeTab, setActiveTab] = useState<'account' | 'privacy' | 'appearance'>('account');
@@ -27,6 +32,21 @@ const UserProfile: React.FC = () => {
             setIsChangingPassword(false);
             setPwdStatus('');
         }, 2000);
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setAvatarUrl(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     return (
@@ -77,31 +97,54 @@ const UserProfile: React.FC = () => {
                             <div className="profile-hero-card">
                                 <div className="profile-hero-banner"></div>
                                 <div className="profile-hero-info">
-                                    <div className="profile-hero-avatar">
-                                        {username ? username.charAt(0).toUpperCase() : 'U'}
+                                    <div 
+                                      className="profile-hero-avatar"
+                                      onClick={handleAvatarClick}
+                                      style={{ cursor: 'pointer', backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', color: avatarUrl ? 'transparent' : 'white' }}
+                                    >
+                                        {!avatarUrl && (username ? username.charAt(0).toUpperCase() : 'U')}
                                         <div className="status-indicator"></div>
+                                        <div className="avatar-upload-overlay">
+                                            <span>Change</span>
+                                        </div>
                                     </div>
+                                    <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleFileChange} />
+                                    
                                     <div className="profile-hero-nameblock">
                                         <span className="profile-display-name">{username}</span>
                                         <span className="profile-tag">#{username || 'User'}</span>
                                     </div>
-                                    <button className="btn-primary" style={{ height: '32px', padding: '0 16px', marginLeft: 'auto' }}>Edit User Profile</button>
+                                    <button 
+                                        className="btn-primary" 
+                                        style={{ height: '32px', padding: '0 16px', flexShrink: 0, whiteSpace: 'nowrap', width: 'auto', backgroundColor: isEditingProfile ? '#23a559' : 'var(--brand)' }}
+                                        onClick={() => setIsEditingProfile(!isEditingProfile)}
+                                    >
+                                        {isEditingProfile ? 'Save Profile' : 'Edit User Profile'}
+                                    </button>
                                 </div>
 
                                 <div className="profile-hero-details">
                                     <div className="detail-row">
                                         <div className="detail-col">
                                             <span className="detail-label">DISPLAY NAME</span>
-                                            <span className="detail-value">{username}</span>
+                                            {isEditingProfile ? (
+                                                <input defaultValue={username ?? ''} style={{ padding: '6px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--bg-secondary)', color: 'white', marginTop: '4px' }} />
+                                            ) : (
+                                                <span className="detail-value">{username}</span>
+                                            )}
                                         </div>
-                                        <button className="btn-secondary">Edit</button>
+                                        {!isEditingProfile && <button className="btn-secondary" onClick={() => setIsEditingProfile(true)}>Edit</button>}
                                     </div>
                                     <div className="detail-row">
                                         <div className="detail-col">
                                             <span className="detail-label">USERNAME</span>
-                                            <span className="detail-value">{username}</span>
+                                            {isEditingProfile ? (
+                                                <input defaultValue={username ?? ''} style={{ padding: '6px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--bg-secondary)', color: 'white', marginTop: '4px' }} />
+                                            ) : (
+                                                <span className="detail-value">{username}</span>
+                                            )}
                                         </div>
-                                        <button className="btn-secondary">Edit</button>
+                                        {!isEditingProfile && <button className="btn-secondary" onClick={() => setIsEditingProfile(true)}>Edit</button>}
                                     </div>
                                     <div className="detail-row" style={{ borderBottom: 'none' }}>
                                         <div className="detail-col">
@@ -117,16 +160,20 @@ const UserProfile: React.FC = () => {
 
                             <div className="settings-section">
                                 <h3 className="section-title">Password and Authentication</h3>
-                                <div className="auth-action-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div className="auth-action-row" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                      {!isChangingPassword ? (
                                         <button className="btn-primary" style={{ width: '160px' }} onClick={() => setIsChangingPassword(true)}>
                                             Change Password
                                         </button>
                                      ) : (
-                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '300px' }}>
+                                            <input type="password" placeholder="Current Password" style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--bg-tertiary)', color: 'white' }} />
                                             <input type="password" placeholder="New Password" style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--bg-tertiary)', color: 'white' }} />
-                                            <button className="btn-primary" style={{ width: 'auto', backgroundColor: '#23a559' }} onClick={handlePasswordChange}>Save</button>
-                                            <button className="btn-secondary" onClick={() => setIsChangingPassword(false)}>Cancel</button>
+                                            <input type="password" placeholder="Confirm New Password" style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--bg-tertiary)', color: 'white' }} />
+                                            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                                <button className="btn-primary" style={{ flex: 1, backgroundColor: '#23a559' }} onClick={handlePasswordChange}>Save</button>
+                                                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setIsChangingPassword(false)}>Cancel</button>
+                                            </div>
                                          </div>
                                      )}
                                      {pwdStatus && <span style={{ color: '#23a559', fontSize: '13px', fontWeight: 'bold' }}>{pwdStatus}</span>}

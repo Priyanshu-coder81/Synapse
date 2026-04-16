@@ -47,5 +47,19 @@
     "content": "Hey",
     "channelId": "u_1776340549105_u2",
     "createdAt": "2026-04-16T17:34:00.039Z"
+  },
+  {
+    "id": "1776362101863",
+    "senderUsername": "icebear",
+    "content": "HIIIIIII",
+    "channelId": "u_1776340549105_u2",
+    "createdAt": "2026-04-16T17:55:01.863Z"
+  },
+  {
+    "id": "1776362111808",
+    "senderUsername": "icebear",
+    "content": "WTH DO YOU THINK?",
+    "channelId": "u_1776340549105_u2",
+    "createdAt": "2026-04-16T17:55:11.808Z"
   }
 ]

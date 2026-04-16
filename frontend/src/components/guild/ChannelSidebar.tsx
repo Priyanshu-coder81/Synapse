@@ -57,9 +57,7 @@ const ChannelSidebar: React.FC = () => {
                      <div className="user-tag">Online</div>
                  </div>
                  <div className="user-profile-controls">
-                     <Mic size={20} className="control-icon" />
-                     <Headphones size={20} className="control-icon" />
-                     <Settings size={20} className="control-icon" onClick={() => navigate('/settings')} title="User Settings" />
+                     <Settings size={24} className="control-icon" onClick={() => navigate('/settings')} title="User Settings" />
                  </div>
             </div>
         </aside>

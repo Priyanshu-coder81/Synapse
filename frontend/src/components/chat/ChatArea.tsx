@@ -5,7 +5,17 @@ import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServerStore } from '../../store/useServerStore';
 import axiosClient from '../../api/axiosClient';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 import './ChatArea.css';
+
+const SAMPLE_GIFS = [
+  "https://media.tenor.com/On7kvXhzO2l6AAAAC.gif",
+  "https://media.tenor.com/L1M-Zk_c7pQAAAAM.gif",
+  "https://media.tenor.com/w1-f_iZtP48AAAAM.gif",
+  "https://media.tenor.com/gOvuT2jG_YAAAAAM.gif",
+  "https://media.tenor.com/1-qI-m0iJCAAAAAM.gif",
+  "https://media.tenor.com/5JzPqJ_J0uYAAAAM.gif"
+];
 
 interface Message {
   id: string;
@@ -19,6 +29,9 @@ const ChatArea: React.FC = () => {
     const { channelId } = useParams<{ channelId: string }>();
     const [msg, setMsg] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
+    
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showGifPicker, setShowGifPicker] = useState(false);
     
     const { isAuthenticated } = useAuthStore();
     const { currentServer } = useServerStore();
@@ -84,6 +97,19 @@ const ChatArea: React.FC = () => {
         }
     };
 
+    const handleSendGif = (url: string) => {
+        if (channelId) {
+            wsClient.sendMessage(channelId, url);
+        }
+        setShowGifPicker(false);
+    };
+
+    const onEmojiClick = (emojiObject: any) => {
+        setMsg(prev => prev + emojiObject.emoji);
+    };
+
+    const isGifUrl = (url: string) => url.startsWith('http') && url.includes('.gif');
+
     return (
         <div className="chat-container">
             <div className="chat-topbar">
@@ -108,7 +134,13 @@ const ChatArea: React.FC = () => {
                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
-                            <div className="message-body">{m.content}</div>
+                            <div className="message-body">
+                                {isGifUrl(m.content) ? (
+                                    <img src={m.content} alt="gif" className="message-gif" />
+                                ) : (
+                                    m.content
+                                )}
+                            </div>
                         </div>
                    </div>
                  ))}
@@ -134,11 +166,47 @@ const ChatArea: React.FC = () => {
                     />
                     {/* Action Icons Toolbar */}
                     <div className="chat-input-actions">
-                        <Gift size={22} className="action-icon" />
+                        <Gift 
+                            size={22} 
+                            className="action-icon" 
+                            onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false); }} 
+                        />
                         <Sticker size={22} className="action-icon" />
-                        <Smile size={22} className="action-icon" />
+                        <Smile 
+                            size={22} 
+                            className="action-icon" 
+                            onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false); }} 
+                        />
                     </div>
                 </div>
+                
+                {/* Pickers Popup */}
+                {(showEmojiPicker || showGifPicker) && (
+                    <div className="chat-pickers-container">
+                        {showGifPicker && (
+                            <div className="gif-picker">
+                                <div className="gif-picker-header">Trending GIFs</div>
+                                <div className="gif-grid">
+                                    {SAMPLE_GIFS.map((gif, idx) => (
+                                        <img 
+                                            key={idx} 
+                                            src={gif} 
+                                            alt="gif" 
+                                            className="gif-item" 
+                                            onClick={() => handleSendGif(gif)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {showEmojiPicker && (
+                            <EmojiPicker 
+                                onEmojiClick={onEmojiClick}
+                                theme={Theme.DARK}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
