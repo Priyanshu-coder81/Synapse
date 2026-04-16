@@ -112,16 +112,61 @@ a:hover {
 }
 
 @media (max-width: 768px) {
+  /* Sidebar Drawer styling */
   .guild-sidebar {
-    display: none; /* Hide guild bar on mobile by default */
+    position: absolute !important;
+    left: -72px;
+    z-index: 50;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  
   .dm-sidebar, .channel-sidebar {
-    width: 100% !important;
-    position: absolute;
-    z-index: 10;
-    display: none; /* Hide secondary sidebar on mobile */
+    position: absolute !important;
+    left: -240px; /* Hidden offscreen by default */
+    z-index: 50;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
   }
+
+  /* When mobileMenuOpen is active, shift them right */
+  .app-container.mobile-open .guild-sidebar {
+    transform: translateX(72px);
+  }
+  .app-container.mobile-open .dm-sidebar, 
+  .app-container.mobile-open .channel-sidebar {
+    transform: translateX(312px); /* 72 + 240 */
+  }
+
+  /* Chat container takes full width initially, but on open, maybe darken it */
   .chat-container {
     width: 100%;
   }
+
+  .mobile-menu-btn {
+    display: block !important;
+  }
+  
+  .mobile-backdrop {
+    display: block !important;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 40;
+    animation: fadeIn 0.3s ease;
+  }
+}
+
+.mobile-menu-btn {
+  display: none;
+  cursor: pointer;
+  color: var(--text-normal);
+  margin-right: 12px;
+}
+.mobile-backdrop {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

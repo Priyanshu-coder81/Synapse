@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { PlusCircle, Search, Hash, Gift, Sticker, Smile } from 'lucide-react';
+import { PlusCircle, Search, Hash, Gift, Sticker, Smile, Menu } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServerStore } from '../../store/useServerStore';
+import { useUIStore } from '../../store/useUIStore';
 import axiosClient from '../../api/axiosClient';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import './ChatArea.css';
@@ -35,6 +36,7 @@ const ChatArea: React.FC = () => {
     
     const { isAuthenticated } = useAuthStore();
     const { currentServer } = useServerStore();
+    const { toggleMobileSidebar } = useUIStore();
     const token = localStorage.getItem('accessToken');
     const channelIdRef = useRef(channelId);
 
@@ -114,6 +116,7 @@ const ChatArea: React.FC = () => {
         <div className="chat-container">
             <div className="chat-topbar">
                 <div className="chat-topbar-title">
+                    <Menu className="mobile-menu-btn" size={24} onClick={toggleMobileSidebar} />
                     <Hash size={24} color="var(--text-muted)" />
                     {channelName}
                 </div>
