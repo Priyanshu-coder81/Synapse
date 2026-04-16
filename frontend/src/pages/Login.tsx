@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
+import { useAuthStore } from '../store/useAuthStore';
 import './Auth.css';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const setAuth = useAuthStore(state => state.setAuth);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login for now
-    console.log('Logging in...', { username, password });
-    navigate('/');
+    setError('');
+    
+    try {
+      // Connect to Spring Boot backend payload
+      const res = await axiosClient.post('/auth/login', { username, password });
+      
+      const { accessToken, refreshToken, userId } = res.data;
+      setAuth(username, userId || username, accessToken, refreshToken);
+      
+      navigate('/channels/@me');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Invalid username or password.');
+    }
   };
 
   return (
@@ -19,6 +34,8 @@ const Login: React.FC = () => {
       <div className="auth-card">
         <h2>Welcome back!</h2>
         <p className="subtitle">We're so excited to see you again!</p>
+        
+        {error && <div style={{ color: 'var(--button-danger)', fontSize: '13px', marginBottom: '16px', fontWeight: 'bold' }}>{error}</div>}
         
         <form className="auth-form" onSubmit={handleLogin}>
           <div className="input-group">

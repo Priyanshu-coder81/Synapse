@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
 import './Auth.css';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate register for now
-    console.log('Registering...', { email, username, password });
-    navigate('/login');
+    setError('');
+    
+    try {
+      await axiosClient.post('/auth/register', { email, username, password });
+      // Redirect to login after successful registration
+      navigate('/login');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Registration failed. Username or email might be taken.');
+    }
   };
 
   return (
@@ -20,6 +29,8 @@ const Register: React.FC = () => {
       <div className="auth-card">
         <h2>Create an account</h2>
         
+        {error && <div style={{ color: 'var(--button-danger)', fontSize: '13px', marginBottom: '16px', fontWeight: 'bold' }}>{error}</div>}
+
         <form className="auth-form" onSubmit={handleRegister}>
           <div className="input-group">
             <label htmlFor="email">Email</label>
