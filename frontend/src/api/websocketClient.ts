@@ -10,7 +10,7 @@ class WebSocketService {
       return;
     }
 
-    this.socket = io('http://localhost:8080', {
+    this.socket = io('https://api.neuralnote.online', {
       auth: { token },
       withCredentials: true
     });

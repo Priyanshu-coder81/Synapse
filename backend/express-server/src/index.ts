@@ -15,7 +15,7 @@ const app = express();
 const httpServer = createServer(app);
 
 // Cross-Origin configuration matching the Vite setup
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: ['http://localhost:5173', 'https://synapse.neuralnote.online'], credentials: true }));
 app.use(express.json());
 
 // Bootloaded API Sub-Routers
@@ -26,7 +26,7 @@ app.use('/api/channels', channelRouter);
 // Main WebSocket Real-time Engine
 const io = new Server(httpServer, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'https://synapse.neuralnote.online'],
     methods: ['GET', 'POST'],
     credentials: true,
   }
