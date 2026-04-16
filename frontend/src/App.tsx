@@ -7,6 +7,7 @@ import DmHub from './pages/DmHub';
 import DmView from './pages/DmView';
 import GuildView from './pages/GuildView';
 import UserProfile from './pages/UserProfile';
+import ExplorePage from './pages/ExplorePage';
 import { useAuthStore } from './store/useAuthStore';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -36,6 +37,9 @@ const App: React.FC = () => {
           <Route path="channels/@me" element={<DmHub />} />
           <Route path="channels/@me/:channelId" element={<DmView />} />
           
+          {/* Explore Servers (separate full page with layout) */}
+          <Route path="explore" element={<ExplorePage />} />
+
           {/* Server View */}
           <Route path="channels/:guildId" element={<GuildView />} />
           <Route path="channels/:guildId/:channelId" element={<GuildView />} />

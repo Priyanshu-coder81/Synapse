@@ -1,38 +1,52 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Hash, ChevronDown, Mic, Headphones, Settings } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useServerStore } from '../../store/useServerStore';
 import './ChannelSidebar.css';
 
 const ChannelSidebar: React.FC = () => {
-    // Dynamic user retrieval from Stage 4 store
-    const { username, logout } = useAuthStore();
+    const { username } = useAuthStore();
     const navigate = useNavigate();
+    const { guildId, channelId } = useParams<{ guildId: string; channelId?: string }>();
+    const { currentServer, fetchServerDetails } = useServerStore();
+
+    useEffect(() => {
+        if (guildId) {
+            fetchServerDetails(guildId);
+        }
+    }, [guildId]);
     
+    const channels = currentServer?.channels || [];
+    const serverName = currentServer?.name || 'Server';
+
     return (
         <aside className="channel-sidebar">
             <div className="channel-sidebar-header">
-                <div>Spring Boot User Group</div>
+                <div>{serverName}</div>
                 <ChevronDown size={18} />
             </div>
             
             <div className="channel-section" style={{ flex: 1, overflowY: 'auto' }}>
                 <div className="channel-category">TEXT CHANNELS</div>
-                <div className="channel-item active">
-                    <Hash size={20} color="var(--text-muted)"/>
-                    general
-                </div>
-                <div className="channel-item">
-                    <Hash size={20} color="var(--text-muted)"/>
-                    announcements
-                </div>
-                <div className="channel-item">
-                    <Hash size={20} color="var(--text-muted)"/>
-                    backend-help
-                </div>
+                {channels.map(ch => (
+                    <div 
+                        key={ch.id} 
+                        className={`channel-item ${channelId === ch.id ? 'active' : ''}`}
+                        onClick={() => navigate(`/channels/${guildId}/${ch.id}`)}
+                    >
+                        <Hash size={20} color="var(--text-muted)"/>
+                        {ch.name}
+                    </div>
+                ))}
+                {channels.length === 0 && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '8px 8px' }}>
+                        No channels
+                    </div>
+                )}
             </div>
 
-            {/* Stage 6 Polish: The User Control Dock */}
+            {/* User Control Dock */}
             <div className="user-profile-panel">
                  <div className="user-profile-avatar">
                      {username ? username.charAt(0).toUpperCase() : 'U'}

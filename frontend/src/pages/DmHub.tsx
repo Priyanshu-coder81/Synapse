@@ -28,7 +28,7 @@ const DmHub: React.FC = () => {
   useEffect(() => {
     // Poll the status or just fetch once
     fetchFriends();
-    const interval = setInterval(fetchFriends, 2000); // Hacky mock auto-refresh
+    const interval = setInterval(fetchFriends, 15000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,0 +1,57 @@
+{
+  "servers": [
+    {
+      "id": "server_1",
+      "name": "Synapse Hub",
+      "icon": "S",
+      "channels": [
+        {
+          "id": "s1_general",
+          "name": "general",
+          "type": "text"
+        },
+        {
+          "id": "s1_announcements",
+          "name": "announcements",
+          "type": "text"
+        },
+        {
+          "id": "s1_dev_talk",
+          "name": "dev-talk",
+          "type": "text"
+        }
+      ],
+      "members": [
+        "u2",
+        "u_1776360289172"
+      ],
+      "ownerId": "u2"
+    },
+    {
+      "id": "server_2",
+      "name": "Gaming Lounge",
+      "icon": "G",
+      "channels": [
+        {
+          "id": "s2_general",
+          "name": "general",
+          "type": "text"
+        },
+        {
+          "id": "s2_game_chat",
+          "name": "game-chat",
+          "type": "text"
+        },
+        {
+          "id": "s2_memes",
+          "name": "memes",
+          "type": "text"
+        }
+      ],
+      "members": [
+        "u2"
+      ],
+      "ownerId": "u2"
+    }
+  ]
+}

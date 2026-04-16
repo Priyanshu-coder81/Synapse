@@ -26,8 +26,8 @@ const DmSidebar: React.FC = () => {
        } catch (e) {}
      };
      fetchFriends();
-     // Safe auto-polling loop
-     const int = setInterval(fetchFriends, 2000);
+     // Polling loop (reduced frequency)
+     const int = setInterval(fetchFriends, 15000);
      return () => clearInterval(int);
   }, []);
 

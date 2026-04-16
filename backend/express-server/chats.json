@@ -19,5 +19,33 @@
     "content": "Just working on it",
     "channelId": "u_1776340549105_u2",
     "createdAt": "2026-04-16T11:56:44.774Z"
+  },
+  {
+    "id": "1776358761769",
+    "senderUsername": "priyanshu",
+    "content": "Hello from Synapse!",
+    "channelId": "s1_general",
+    "createdAt": "2026-04-16T16:59:21.769Z"
+  },
+  {
+    "id": "1776358795683",
+    "senderUsername": "priyanshu",
+    "content": "Testing duplication...",
+    "channelId": "s1_general",
+    "createdAt": "2026-04-16T16:59:55.683Z"
+  },
+  {
+    "id": "1776358925536",
+    "senderUsername": "priyanshu",
+    "content": "Testing no duplicates",
+    "channelId": "s1_general",
+    "createdAt": "2026-04-16T17:02:05.536Z"
+  },
+  {
+    "id": "1776360840039",
+    "senderUsername": "priyanshu",
+    "content": "Hey",
+    "channelId": "u_1776340549105_u2",
+    "createdAt": "2026-04-16T17:34:00.039Z"
   }
 ]

@@ -1,0 +1,189 @@
+.explore-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+.explore-topbar {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #111214;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.explore-back-btn {
+  background: none;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+.explore-back-btn:hover {
+  color: var(--text-normal);
+  background-color: var(--bg-tertiary);
+}
+
+.explore-title {
+  color: var(--text-header);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.explore-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 32px 32px;
+}
+
+.explore-hero {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+
+.explore-hero h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.explore-hero p {
+  color: var(--text-muted);
+  font-size: 15px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.explore-card {
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.explore-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.explore-card-banner {
+  height: 100px;
+  background: linear-gradient(135deg, var(--brand), #7c6cf0, #a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.explore-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 24px;
+}
+
+.explore-card-body {
+  padding: 16px 20px 20px;
+}
+
+.explore-card-name {
+  color: var(--text-header);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.explore-card-stats {
+  display: flex;
+  gap: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.explore-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.explore-card-join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background-color: var(--green);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.explore-card-join:hover {
+  background-color: var(--green-hover);
+}
+
+.explore-card-joined {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--green);
+  border-radius: 6px;
+}
+
+.explore-empty {
+  text-align: center;
+  padding: 64px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.explore-empty p {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* Scrollbar */
+.explore-content::-webkit-scrollbar {
+  width: 8px;
+}
+.explore-content::-webkit-scrollbar-thumb {
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+.explore-content::-webkit-scrollbar-track {
+  background-color: var(--bg-primary);
+}

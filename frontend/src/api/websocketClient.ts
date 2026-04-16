@@ -4,16 +4,19 @@ class WebSocketService {
   private socket: Socket | null = null;
 
   connect(token: string, onConnectCallback?: () => void) {
-    // Prevent duplicate connections inherently
-    if (this.socket && this.socket.connected) return;
+    // Prevent duplicate connections
+    if (this.socket && this.socket.connected) {
+      if (onConnectCallback) onConnectCallback();
+      return;
+    }
 
     this.socket = io('http://localhost:8080', {
-      auth: { token }, // Push JWT securely
+      auth: { token },
       withCredentials: true
     });
 
     this.socket.on('connect', () => {
-      console.log('Successfully connected to Express Socket.io backend.');
+      console.log('Successfully connected to Socket.io backend.');
       if (onConnectCallback) onConnectCallback();
     });
 
@@ -28,7 +31,7 @@ class WebSocketService {
       return null;
     }
     
-    // Explicitly join real-time room array
+    // Join the channel room
     this.socket.emit('join_channel', channelId);
     
     const listener = (msg: any) => callback(msg);
@@ -41,13 +44,18 @@ class WebSocketService {
     };
   }
 
+  leaveChannel(channelId: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('leave_channel', channelId);
+    }
+  }
+
   sendMessage(channelId: string, content: string) {
     if (!this.socket || !this.socket.connected) {
       console.warn("Cannot send message: Socket is not connected.");
       return;
     }
     
-    // Dispatch identical object directly backwards replacing STOMP
     this.socket.emit('send_message', { channelId, content });
   }
 
@@ -60,5 +68,5 @@ class WebSocketService {
   }
 }
 
-// Export singleton instance exactly matching original frontend hook implementation
+// Export singleton instance
 export const wsClient = new WebSocketService();

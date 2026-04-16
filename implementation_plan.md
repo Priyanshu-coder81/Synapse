@@ -1,445 +1,219 @@
-# Dissonance — Backend Implementation Plan
+# Synapse — Fix Frontend Bugs & Build Structured Backend
 
-> Full Spring Boot backend for a Discord-inspired real-time communication platform.
+## Background
 
-## Current State
+The current app has a **mock-server.js** backend and a React+Vite frontend. The frontend has **hardcoded servers**, non-functional channel navigation, no server join/leave, static members list, and several WebSocket bugs. The goal is to:
 
-- **Spring Boot 3.5.13** scaffold with only `ChatApplication.java`
-- **Dependencies already present**: Spring Web, Spring Security, Spring Data JPA, Spring WebSocket, PostgreSQL driver, Lombok, jjwt 0.12.6, MinIO 8.5.9
-- **Missing dependencies**: Spring Data Redis, Spring Boot Starter Validation, Cloudinary SDK
-- **Dependencies to remove**: MinIO (replaced by Cloudinary)
-- **Database**: PostgreSQL on NeonDB (already configured)
-- **Redis**: Redis Cloud (user-provided instance)
-- **File Storage**: Cloudinary (cloud-hosted image/file CDN)
-- **No business logic, entities, or configuration** exists yet
+1. Fix all frontend bugs
+2. Build a proper structured backend with `servers.json` (2 servers), joinable servers, per-channel chat history
+3. Remove hardcoded default servers from frontend — load everything from the API
+
+---
+
+## Frontend Bug Audit
+
+### Bug 1 — GuildSidebar: Hardcoded Servers
+- [GuildSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/navigation/GuildSidebar.tsx#L10-L14)
+- Servers are hardcoded as a static array: `Spring Boot User Group`, `React Developers`, `Synapse Dev Logs`
+- **Fix**: Fetch servers from `GET /api/servers` (user's joined servers)
+
+### Bug 2 — ChannelSidebar: Hardcoded server name & channels
+- [ChannelSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/guild/ChannelSidebar.tsx#L15-L32)
+- Server name is hardcoded as `"Spring Boot User Group"`, channels are static HTML (`general`, `announcements`, `backend-help`)
+- Channels don't navigate anywhere — clicking them does nothing
+- **Fix**: Fetch server details + channels from `GET /api/servers/:guildId`, make channels clickable
+
+### Bug 3 — ChatArea: WebSocket cleanup race condition
+- [ChatArea.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/chat/ChatArea.tsx#L37-L49)
+- The `onConnectCallback` returns a cleanup function from `wsClient.subscribeToChannel`, but it's returned **inside the callback, not the useEffect** — so React never calls the unsubscribe
+- `wsClient.disconnect()` is called on every channelId change, killing the entire socket connection
+- **Fix**: Restructure to properly manage subscription lifecycle without disconnecting on channel switch
+
+### Bug 4 — ChatArea: Messages not scoped to channel
+- When switching channels, old messages persist because `setMessages([])` is never called on channel change
+- The history fetch replaces but WebSocket `receive_message` listener is global — receives all channels' messages
+- **Fix**: Clear messages on channel switch; only append messages matching current channelId
+
+### Bug 5 — ChatArea: No channel name resolution
+- [ChatArea.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/chat/ChatArea.tsx#L73)
+- Displays `channel-{channelId}` as the channel name instead of the actual channel name
+- **Fix**: Either pass channel name as context or look it up from the server data
+
+### Bug 6 — MembersList: Completely static/hardcoded
+- [MembersList.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/guild/MembersList.tsx)
+- Shows hardcoded "Admin", "Yatha", "Java Master" — has zero connection to actual data
+- **Fix**: Fetch server members from `GET /api/servers/:guildId/members`
+
+### Bug 7 — DmSidebar: 2-second polling is aggressive
+- [DmSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/dm/DmSidebar.tsx#L30)
+- Polls `GET /api/friends` every 2 seconds — unnecessary load. Same in DmHub.
+- **Fix**: Increase interval to 15 seconds (acceptable for a mock backend)
+
+### Bug 8 — GuildView: Doesn't pass guildId to children
+- [GuildView.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/pages/GuildView.tsx)
+- `ChannelSidebar`, `ChatArea`, and `MembersList` receive no props about which guild is active
+- **Fix**: Read `guildId` from URL params and pass to children (or use a store)
+
+### Bug 9 — "Add Server" button is non-functional
+- [GuildSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/navigation/GuildSidebar.tsx#L56-L58)
+- The `+` button does nothing
+- **Fix**: Open a modal/flow to browse and join available servers
+
+### Bug 10 — "Explore Servers" button is non-functional
+- Same file, the Compass button does nothing
+- **Fix**: Wire up to show discoverable servers
+
+### Bug 11 — App.css is Vite boilerplate
+- [App.css](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/App.css) contains leftover Vite template CSS (`.counter`, `.hero`, `#center`, etc.)
+- **Fix**: Delete the file / clear its contents
+
+### Bug 12 — UserProfile: Email is fabricated
+- [UserProfile.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/pages/UserProfile.tsx#L109)
+- Shows `{username}@synapse.com` — not the user's actual email
+- **Fix**: Store email in auth state from registration, display it properly
+
+---
+
+## Proposed Changes
+
+### Backend — Complete Restructure
+
+#### [MODIFY] [mock-server.js](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/backend/express-server/mock-server.js)
+
+Complete rewrite to add:
+
+1. **`servers.json`** — Pre-populated with 2 servers:
+   - **Synapse Hub** (id: `server_1`) — channels: `general`, `announcements`, `dev-talk`
+   - **Gaming Lounge** (id: `server_2`) — channels: `general`, `game-chat`, `memes`
+
+2. **New API Routes**:
+   | Method | Route | Description |
+   |--------|-------|-------------|
+   | `GET` | `/api/servers/discover` | List all servers available to join |
+   | `GET` | `/api/servers/mine` | List servers the current user has joined |
+   | `GET` | `/api/servers/:id` | Get server details + its channels |
+   | `POST` | `/api/servers/:id/join` | Join a server |
+   | `POST` | `/api/servers/:id/leave` | Leave a server |
+   | `GET` | `/api/servers/:id/members` | Get server members list |
+   | `GET` | `/api/channels/:channelId/messages` | *(existing)* Get channel chat history |
+
+3. **Per-channel chat history** — `chats.json` already stores `channelId` per message; the backend correctly filters. No change needed here.
+
+4. **`servers.json` data format**:
+```json
+{
+  "servers": [
+    {
+      "id": "server_1",
+      "name": "Synapse Hub",
+      "icon": "S",
+      "channels": [
+        { "id": "s1_general", "name": "general", "type": "text" },
+        { "id": "s1_announcements", "name": "announcements", "type": "text" },
+        { "id": "s1_dev_talk", "name": "dev-talk", "type": "text" }
+      ],
+      "members": [],
+      "ownerId": "u2"
+    },
+    {
+      "id": "server_2",
+      "name": "Gaming Lounge",
+      "icon": "G",
+      "channels": [
+        { "id": "s2_general", "name": "general", "type": "text" },
+        { "id": "s2_game_chat", "name": "game-chat", "type": "text" },
+        { "id": "s2_memes", "name": "memes", "type": "text" }
+      ],
+      "members": [],
+      "ownerId": "u2"
+    }
+  ]
+}
+```
+
+#### [NEW] [servers.json](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/backend/express-server/servers.json)
+The initial server data file as shown above.
+
+---
+
+### Frontend — Component Rewiring
+
+#### [MODIFY] [GuildSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/navigation/GuildSidebar.tsx)
+- Remove hardcoded servers array
+- Fetch from `GET /api/servers/mine` on mount
+- Add Server (`+`) → open a join server modal/dropdown
+- Explore (`Compass`) → shows all discoverable servers
+
+#### [NEW] `frontend/src/store/useServerStore.ts`
+- Zustand store for:
+  - `myServers` — user's joined servers
+  - `currentServer` — active server details (name, channels, members)
+  - `fetchMyServers()`, `fetchServerDetails(id)`, `joinServer(id)`, `leaveServer(id)`
+
+#### [NEW] `frontend/src/components/guild/JoinServerModal.tsx`
+- A modal that lists discoverable servers with a "Join" button
+- Triggered from the `+` button in `GuildSidebar`
+
+#### [MODIFY] [ChannelSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/guild/ChannelSidebar.tsx)
+- Read `guildId` from URL params
+- Fetch server details from store → render dynamic server name + channels
+- Make each channel clickable → navigate to `/channels/:guildId/:channelId`
+- Highlight the active channel
+
+#### [MODIFY] [ChatArea.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/chat/ChatArea.tsx)
+- Fix WebSocket subscription lifecycle (no disconnect on channel switch)
+- Clear messages on channel change
+- Filter incoming messages to current channel only
+- Resolve channel name from server store
+
+#### [MODIFY] [MembersList.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/guild/MembersList.tsx)
+- Read `guildId` from URL params
+- Fetch members from `GET /api/servers/:guildId/members`
+- Render dynamically
+
+#### [MODIFY] [GuildView.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/pages/GuildView.tsx)
+- Auto-redirect to the first channel if no `channelId` in URL
+- Trigger server data fetch on guildId change
+
+#### [MODIFY] [DmSidebar.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/components/dm/DmSidebar.tsx) + [DmHub.tsx](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/pages/DmHub.tsx)
+- Change polling interval from 2s to 15s
+
+#### [DELETE] [App.css](file:///d:/Web%20devlopment/2026PBL/Synapse/Synapse/frontend/src/App.css)
+- Remove Vite boilerplate CSS (no component references it anyway since all styles use module-specific CSS files)
 
 ---
 
 ## User Review Required
 
-> [!NOTE]
-> **Redis**: Using Redis Cloud. You'll need to provide the host, port, and password for your instance in `application.properties`.
-
-> [!NOTE]
-> **File Storage**: Using Cloudinary instead of MinIO. You'll need to provide your Cloudinary cloud name, API key, and API secret.
-
-> [!WARNING]
-> **Database credentials** are currently hardcoded in `application.properties`. For production, these should be environment variables. I'll keep them as-is for now but can refactor to `application.yml` with env var placeholders if you prefer.
+> [!IMPORTANT]
+> **Server Data**: The 2 pre-built servers will be "Synapse Hub" and "Gaming Lounge". Users start with **no servers joined** and must explicitly join via the `+` button. Happy with these names/structure?
 
 > [!IMPORTANT]
-> **Frontend**: This plan covers the **backend only**. The React/Next.js frontend will be a separate phase. Should I plan that too after backend is done?
+> **Join Server Flow**: I'll implement a simple overlay modal triggered by the `+` button that lists all available servers with Join/Leave buttons. No invite-link system. Is that OK?
 
----
-
-## Proposed Changes — 8 Phases
-
-### Phase 1: Project Configuration & Dependencies
-
-#### [MODIFY] [pom.xml](file:///d:/Web%20devlopment/JAVA-BACKEND/Synapse/backend/chat-application/pom.xml)
-Add missing dependencies:
-- `spring-boot-starter-data-redis` — Redis Cloud for JWT blocklist + pub/sub
-- `spring-boot-starter-validation` — Request DTO validation (`@Valid`, `@NotBlank`, etc.)
-- `cloudinary-http5` (com.cloudinary) — Cloudinary SDK for file/image uploads
-
-Remove:
-- `minio` — replaced by Cloudinary
-
-#### [MODIFY] [application.properties](file:///d:/Web%20devlopment/JAVA-BACKEND/Synapse/backend/chat-application/src/main/resources/application.properties)
-Add configuration for:
-- Redis Cloud connection (`spring.data.redis.host`, `port`, `password`, `ssl.enabled=true`)
-- JWT secrets and TTLs (`app.jwt.secret`, `app.jwt.access-token-expiry`, `app.jwt.refresh-token-expiry`)
-- Cloudinary credentials (`app.cloudinary.cloud-name`, `api-key`, `api-secret`)
-- WebSocket allowed origins
-- File upload limits (`spring.servlet.multipart.max-file-size`)
-
-> [!TIP]
-> No Docker Compose needed — all infrastructure (PostgreSQL, Redis, file storage) is cloud-hosted.
-
----
-
-### Phase 2: JPA Entities (Data Model)
-
-All entities go under `com.synapse.chat_application.entity`.
-
-#### [NEW] User.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | `@GeneratedValue(strategy = UUID)` |
-| username | String | unique, not null |
-| email | String | unique, not null |
-| password | String | BCrypt hashed |
-| avatarUrl | String | nullable, MinIO URL |
-| createdAt | Instant | `@CreationTimestamp` |
-
-#### [NEW] Guild.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| name | String | not null |
-| iconUrl | String | nullable |
-| inviteCode | String | unique, auto-generated |
-| owner | User | `@ManyToOne` |
-| createdAt | Instant | |
-
-#### [NEW] GuildMember.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| user | User | `@ManyToOne` |
-| guild | Guild | `@ManyToOne` |
-| role | Role enum | `OWNER` / `MEMBER` |
-| joinedAt | Instant | |
-
-Composite unique constraint on `(user, guild)`.
-
-#### [NEW] Channel.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| name | String | not null |
-| topic | String | nullable |
-| guild | Guild | `@ManyToOne` |
-| createdAt | Instant | |
-
-#### [NEW] Message.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| content | String | `@Column(columnDefinition = "TEXT")` |
-| sender | User | `@ManyToOne` |
-| channel | Channel | `@ManyToOne`, nullable (null → DM) |
-| dmThread | DirectMessage | `@ManyToOne`, nullable (null → channel msg) |
-| edited | boolean | default false |
-| createdAt | Instant | |
-| updatedAt | Instant | |
-
-#### [NEW] DirectMessage.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| user1 | User | `@ManyToOne` |
-| user2 | User | `@ManyToOne` |
-| createdAt | Instant | |
-
-Unique constraint on ordered `(user1, user2)` pair.
-
-#### [NEW] Attachment.java
-| Field | Type | Notes |
-|-------|------|-------|
-| id | UUID | PK |
-| message | Message | `@OneToOne` |
-| fileUrl | String | Cloudinary URL |
-| publicId | String | Cloudinary public ID (for deletion) |
-| fileName | String | original name |
-| fileType | String | MIME type |
-| fileSize | Long | bytes |
-
-#### [NEW] Role.java (enum)
-```java
-public enum Role { OWNER, MEMBER }
-```
-
----
-
-### Phase 3: Repositories
-
-All under `com.synapse.chat_application.repository`.
-
-| File | Key Methods |
-|------|-------------|
-| **UserRepository.java** | `findByUsername()`, `findByEmail()`, `existsByUsername()`, `existsByEmail()` |
-| **GuildRepository.java** | `findByInviteCode()` |
-| **GuildMemberRepository.java** | `findByUserAndGuild()`, `findAllByUser()`, `findAllByGuild()`, `existsByUserAndGuild()` |
-| **ChannelRepository.java** | `findAllByGuild()` |
-| **MessageRepository.java** | `findByChannelOrderByCreatedAtDesc(Pageable)`, `findByDmThreadOrderByCreatedAtDesc(Pageable)` |
-| **DirectMessageRepository.java** | `findByUser1AndUser2()`, `findAllByUser1OrUser2()` |
-| **AttachmentRepository.java** | `findByMessage()` |
-
----
-
-### Phase 4: Security & Authentication
-
-#### [NEW] `config/SecurityConfig.java`
-- `SecurityFilterChain` bean
-- Disable CSRF (stateless API)
-- Permit `/api/auth/**` endpoints
-- All other endpoints require authentication
-- Add `JwtAuthenticationFilter` before `UsernamePasswordAuthenticationFilter`
-- `BCryptPasswordEncoder` bean
-- CORS configuration for frontend origin
-
-#### [NEW] `security/JwtService.java`
-- Generate access token (15 min TTL)
-- Generate refresh token (7 day TTL)
-- Extract username/claims from token
-- Validate token (signature + expiry + not in blocklist)
-- Uses `io.jsonwebtoken` (jjwt) library
-
-#### [NEW] `security/JwtAuthenticationFilter.java`
-- `OncePerRequestFilter`
-- Extract `Authorization: Bearer <token>` header
-- Validate via `JwtService`
-- Check Redis blocklist
-- Set `SecurityContextHolder` authentication
-
-#### [NEW] `security/CustomUserDetailsService.java`
-- Implements `UserDetailsService`
-- Loads user from `UserRepository`
-
-#### [NEW] `service/TokenBlacklistService.java`
-- `blacklist(token, remainingTTL)` → stores in Redis
-- `isBlacklisted(token)` → checks Redis
-- Uses `StringRedisTemplate`
-
-#### DTOs (under `dto/auth/`)
-| File | Fields |
-|------|--------|
-| **RegisterRequest.java** | username, email, password |
-| **LoginRequest.java** | username, password |
-| **AuthResponse.java** | accessToken, refreshToken, username, userId |
-| **RefreshRequest.java** | refreshToken |
-
-#### [NEW] `controller/AuthController.java`
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `POST /api/auth/register` | register | Create user, return tokens |
-| `POST /api/auth/login` | login | Validate credentials, return tokens |
-| `POST /api/auth/refresh` | refresh | Issue new access token |
-| `POST /api/auth/logout` | logout | Blocklist current token in Redis |
-
-#### [NEW] `service/AuthService.java`
-Business logic for registration, login, token refresh, and logout.
-
----
-
-### Phase 5: Guild & Channel Management
-
-#### DTOs (under `dto/guild/`)
-| File | Fields |
-|------|--------|
-| **CreateGuildRequest.java** | name, iconUrl (optional) |
-| **GuildResponse.java** | id, name, iconUrl, inviteCode, ownerUsername, memberCount |
-| **ChannelRequest.java** | name, topic (optional) |
-| **ChannelResponse.java** | id, name, topic, guildId |
-| **GuildMemberResponse.java** | userId, username, avatarUrl, role, joinedAt |
-
-#### [NEW] `service/GuildService.java`
-- `createGuild(user, request)` — creates guild + default "general" channel + OWNER membership
-- `joinGuild(user, inviteCode)` — validates invite, creates MEMBER entry
-- `getGuildsForUser(user)` — returns all guilds user belongs to
-- `getGuildMembers(guildId)` — returns members list
-- `regenerateInviteCode(user, guildId)` — OWNER only
-
-#### [NEW] `service/ChannelService.java`
-- `createChannel(user, guildId, request)` — OWNER only
-- `getChannels(guildId)` — list channels for a guild
-- `deleteChannel(user, guildId, channelId)` — OWNER only, can't delete last channel
-
-#### [NEW] `controller/GuildController.java`
-| Endpoint | Method |
-|----------|--------|
-| `POST /api/guilds` | Create guild |
-| `GET /api/guilds` | List user's guilds |
-| `GET /api/guilds/{id}` | Get guild details |
-| `POST /api/guilds/join/{inviteCode}` | Join via invite |
-| `GET /api/guilds/{id}/members` | List members |
-| `POST /api/guilds/{id}/invite/regenerate` | Regenerate invite |
-
-#### [NEW] `controller/ChannelController.java`
-| Endpoint | Method |
-|----------|--------|
-| `POST /api/guilds/{guildId}/channels` | Create channel |
-| `GET /api/guilds/{guildId}/channels` | List channels |
-| `DELETE /api/guilds/{guildId}/channels/{channelId}` | Delete channel |
-
----
-
-### Phase 6: Real-Time Messaging (WebSocket + Redis Pub/Sub)
-
-#### [NEW] `config/WebSocketConfig.java`
-- Implements `WebSocketMessageBrokerConfigurer`
-- Enable STOMP over SockJS at `/ws`
-- Application destination prefix: `/app`
-- Topic broker prefix: `/topic`
-- Configure allowed origins
-
-#### [NEW] `config/RedisConfig.java`
-- `RedisMessageListenerContainer` bean
-- `RedisTemplate<String, String>` bean
-- Channel-based message listener registration
-
-#### [NEW] `dto/message/MessageRequest.java`
-- content, channelId (or dmThreadId)
-
-#### [NEW] `dto/message/MessageResponse.java`
-- id, content, senderUsername, senderAvatarUrl, channelId, edited, createdAt, attachment (optional)
-
-#### [NEW] `service/MessageService.java`
-- `sendMessage(user, request)` — persist to DB → publish to Redis → fan out via STOMP
-- `editMessage(user, messageId, newContent)` — owner only
-- `deleteMessage(user, messageId)` — owner only
-- `getChannelMessages(channelId, page, size)` — paginated history
-- `getDmMessages(dmThreadId, page, size)` — paginated history
-
-#### [NEW] `controller/ChatController.java` (WebSocket)
-- `@MessageMapping("/chat.send")` — receive message via STOMP
-- `@MessageMapping("/chat.edit")` — edit message
-- `@MessageMapping("/chat.delete")` — delete message
-
-#### [NEW] `controller/MessageRestController.java` (REST)
-| Endpoint | Method |
-|----------|--------|
-| `GET /api/channels/{channelId}/messages?page=0&size=50` | Message history |
-| `GET /api/dm/{threadId}/messages?page=0&size=50` | DM history |
-
-#### [NEW] `service/RedisMessagePublisher.java`
-- Publishes serialized message to Redis channel topic
-
-#### [NEW] `service/RedisMessageSubscriber.java`
-- Listens on Redis channels → broadcasts to STOMP `/topic/channel/{id}`
-
----
-
-### Phase 7: Direct Messages
-
-#### DTOs (under `dto/dm/`)
-| File | Fields |
-|------|--------|
-| **CreateDmRequest.java** | targetUsername |
-| **DmThreadResponse.java** | id, otherUser (username, avatarUrl), lastMessage, lastMessageAt |
-
-#### [NEW] `service/DirectMessageService.java`
-- `getOrCreateDmThread(user, targetUsername)` — find existing or create new
-- `getDmThreadsForUser(user)` — list all DM conversations
-- Messages reuse `MessageService` with `dmThread` instead of `channel`
-
-#### [NEW] `controller/DirectMessageController.java`
-| Endpoint | Method |
-|----------|--------|
-| `POST /api/dm` | Start/get DM thread |
-| `GET /api/dm` | List user's DM threads |
-
----
-
-### Phase 8: File Uploads (Cloudinary)
-
-#### [NEW] `config/CloudinaryConfig.java`
-- `Cloudinary` bean configured with cloud name, API key, and API secret
-- Reads credentials from `application.properties`
-
-#### [NEW] `service/FileStorageService.java`
-- `uploadFile(MultipartFile)` — upload to Cloudinary, return secure URL + publicId
-- `deleteFile(publicId)` — remove from Cloudinary by publicId
-- Auto-detects resource type (image, video, raw) for proper Cloudinary handling
-- Validates file type and size
-
-#### [NEW] `controller/FileController.java`
-| Endpoint | Method |
-|----------|--------|
-| `POST /api/files/upload` | Upload file, return Cloudinary URL |
-
-#### [NEW] `dto/file/FileUploadResponse.java`
-- fileUrl, publicId, fileName, fileType, fileSize
-
----
-
-## File Structure (Final)
-
-```
-src/main/java/com/synapse/chat_application/
-├── ChatApplication.java
-├── config/
-│   ├── SecurityConfig.java
-│   ├── WebSocketConfig.java
-│   ├── RedisConfig.java
-│   └── CloudinaryConfig.java
-├── security/
-│   ├── JwtService.java
-│   ├── JwtAuthenticationFilter.java
-│   └── CustomUserDetailsService.java
-├── entity/
-│   ├── User.java
-│   ├── Guild.java
-│   ├── GuildMember.java
-│   ├── Channel.java
-│   ├── Message.java
-│   ├── DirectMessage.java
-│   ├── Attachment.java
-│   └── Role.java
-├── repository/
-│   ├── UserRepository.java
-│   ├── GuildRepository.java
-│   ├── GuildMemberRepository.java
-│   ├── ChannelRepository.java
-│   ├── MessageRepository.java
-│   ├── DirectMessageRepository.java
-│   └── AttachmentRepository.java
-├── dto/
-│   ├── auth/
-│   │   ├── RegisterRequest.java
-│   │   ├── LoginRequest.java
-│   │   ├── AuthResponse.java
-│   │   └── RefreshRequest.java
-│   ├── guild/
-│   │   ├── CreateGuildRequest.java
-│   │   ├── GuildResponse.java
-│   │   ├── ChannelRequest.java
-│   │   ├── ChannelResponse.java
-│   │   └── GuildMemberResponse.java
-│   ├── message/
-│   │   ├── MessageRequest.java
-│   │   └── MessageResponse.java
-│   ├── dm/
-│   │   ├── CreateDmRequest.java
-│   │   └── DmThreadResponse.java
-│   └── file/
-│       └── FileUploadResponse.java
-├── service/
-│   ├── AuthService.java
-│   ├── TokenBlacklistService.java
-│   ├── GuildService.java
-│   ├── ChannelService.java
-│   ├── MessageService.java
-│   ├── DirectMessageService.java
-│   ├── FileStorageService.java
-│   ├── RedisMessagePublisher.java
-│   └── RedisMessageSubscriber.java
-├── controller/
-│   ├── AuthController.java
-│   ├── GuildController.java
-│   ├── ChannelController.java
-│   ├── ChatController.java
-│   ├── MessageRestController.java
-│   ├── DirectMessageController.java
-│   └── FileController.java
-└── exception/
-    ├── GlobalExceptionHandler.java
-    ├── ResourceNotFoundException.java
-    ├── UnauthorizedException.java
-    └── BadRequestException.java
-```
+> [!WARNING]
+> **I will NOT touch the existing DM/Friends system** — it's working correctly. Only reducing the polling interval.
 
 ---
 
 ## Open Questions
 
-1. **Redis Cloud credentials**: Please share your Redis Cloud host, port, and password (or I'll add placeholders for you to fill in).
-2. **Cloudinary credentials**: Please share your Cloudinary cloud name, API key, and API secret (or placeholders).
-3. **CORS origins**: What will be the frontend URL? (e.g., `http://localhost:3000`)?
-4. **Should I also build the frontend** after the backend is complete?
+1. Should the "Explore" (Compass) button also open the same join-server modal, or do you want it as a separate page?
+2. Should users be auto-joined to any server on registration, or always start with zero servers?
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-- `mvn compile` — ensure all code compiles cleanly
-- `mvn test` — run the default Spring Boot test suite
-- Entity validation: Spring Boot startup will auto-create tables via `ddl-auto=update`
-
-### Manual Verification
-- **Auth flow**: Register → Login → Access protected endpoint → Refresh → Logout
-- **Guild flow**: Create guild → Get invite code → Join guild → List channels
-- **Messaging**: Connect WebSocket → Send message → Verify delivery + persistence
-- **File upload**: Upload file → Verify Cloudinary storage → Verify URL in response
-- Test all REST endpoints via a tool like Postman or `curl`
+- Start the new backend: `node mock-server.js`
+- Start the frontend: `npm run dev`
+- Test via browser:
+  1. Register a new user → should land on DM hub with empty guild sidebar (no servers)
+  2. Click `+` → Join Server modal shows 2 servers
+  3. Join "Synapse Hub" → appears in sidebar, click it → see channels (general, announcements, dev-talk)
+  4. Click `general` → chat area shows with correct channel name, send messages → persisted in chats.json scoped to channel
+  5. Switch to `dev-talk` → messages clear, shows separate history
+  6. Click `+` → join "Gaming Lounge" → separate channels, separate chat history
+  7. Leave a server → disappears from sidebar
+  8. Verify DM/Friends still work as before

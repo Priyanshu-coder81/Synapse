@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { PlusCircle, Search, Hash, Gift, Sticker, Smile } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useServerStore } from '../../store/useServerStore';
 import axiosClient from '../../api/axiosClient';
 import './ChatArea.css';
 
@@ -11,6 +12,7 @@ interface Message {
   senderUsername: string;
   content: string;
   createdAt: string;
+  channelId?: string;
 }
 
 const ChatArea: React.FC = () => {
@@ -19,10 +21,22 @@ const ChatArea: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     
     const { isAuthenticated } = useAuthStore();
+    const { currentServer } = useServerStore();
     const token = localStorage.getItem('accessToken');
+    const channelIdRef = useRef(channelId);
 
+    // Keep ref in sync
+    useEffect(() => {
+        channelIdRef.current = channelId;
+    }, [channelId]);
+
+    // Resolve channel name from server store
+    const channelName = currentServer?.channels.find(c => c.id === channelId)?.name || channelId || 'general';
+
+    // Fetch history when channel changes
     useEffect(() => {
         if (!channelId) return;
+        setMessages([]); // Clear messages on channel switch
         const fetchHistory = async () => {
              try {
                  const res = await axiosClient.get(`/channels/${channelId}/messages`);
@@ -34,33 +48,38 @@ const ChatArea: React.FC = () => {
         fetchHistory();
     }, [channelId]);
 
+    // WebSocket connection — connect once, manage subscriptions per channel
     useEffect(() => {
-        if (isAuthenticated && token) {
-            wsClient.connect(token, () => {
-               if (channelId) {
-                   const subscription = wsClient.subscribeToChannel(channelId, (newMsg: Message) => {
-                       setMessages(prev => [newMsg, ...prev]);
-                   });
-                   return () => subscription?.unsubscribe();
-               }
-            });
-        }
-        return () => wsClient.disconnect();
-    }, [isAuthenticated, token, channelId]);
+        if (!isAuthenticated || !token) return;
+
+        wsClient.connect(token);
+
+        return () => {
+            // Only disconnect on full unmount (e.g., logout), not channel switch
+        };
+    }, [isAuthenticated, token]);
+
+    // Subscribe to channel — separate effect so it reacts to channelId changes
+    useEffect(() => {
+        if (!channelId || !isAuthenticated || !token) return;
+
+        const subscription = wsClient.subscribeToChannel(channelId, (newMsg: Message) => {
+            if (newMsg.channelId === channelIdRef.current) {
+                setMessages(prev => [newMsg, ...prev]);
+            }
+        });
+
+        return () => {
+            subscription?.unsubscribe();
+            wsClient.leaveChannel(channelId);
+        };
+    }, [channelId, isAuthenticated, token]);
 
     const handleSendMessage = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && msg.trim() !== '') {
             if (channelId) {
                 wsClient.sendMessage(channelId, msg.trim());
                 setMsg(""); 
-            } else {
-                setMessages([{
-                  id: Date.now().toString(),
-                  senderUsername: 'You',
-                  content: msg.trim(),
-                  createdAt: new Date().toISOString()
-                }, ...messages]);
-                setMsg("");
             }
         }
     };
@@ -70,7 +89,7 @@ const ChatArea: React.FC = () => {
             <div className="chat-topbar">
                 <div className="chat-topbar-title">
                     <Hash size={24} color="var(--text-muted)" />
-                    {channelId ? `channel-${channelId}` : 'general'}
+                    {channelName}
                 </div>
                 <div className="chat-search">
                      <input type="text" placeholder="Search" />
@@ -94,7 +113,13 @@ const ChatArea: React.FC = () => {
                    </div>
                  ))}
                  
-                  {/* System default placeholder removed */}
+                 {messages.length === 0 && channelId && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: '8px' }}>
+                        <Hash size={48} style={{ opacity: 0.3 }} />
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-header)' }}>Welcome to #{channelName}!</div>
+                        <div style={{ fontSize: '14px' }}>This is the start of the #{channelName} channel.</div>
+                    </div>
+                 )}
             </div>
 
             <div className="chat-input-wrapper">
@@ -102,12 +127,12 @@ const ChatArea: React.FC = () => {
                     <PlusCircle className="chat-input-icon" size={24} />
                     <input 
                       type="text" 
-                      placeholder={channelId ? `Message #channel-${channelId}` : "Message #general"} 
+                      placeholder={`Message #${channelName}`} 
                       value={msg}
                       onChange={e => setMsg(e.target.value)}
                       onKeyDown={handleSendMessage}
                     />
-                    {/* Stage 6 Polish: Action Icons Toolbar */}
+                    {/* Action Icons Toolbar */}
                     <div className="chat-input-actions">
                         <Gift size={22} className="action-icon" />
                         <Sticker size={22} className="action-icon" />

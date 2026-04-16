@@ -17,19 +17,28 @@ const JWT_SECRET = 'super_secret_mock_key';
 const DB_FILE = path.join(__dirname, 'chats.json');
 const FRIENDS_FILE = path.join(__dirname, 'friends.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
+const SERVERS_FILE = path.join(__dirname, 'servers.json');
 
 // Initialize text DB files
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify([]));
 if (!fs.existsSync(FRIENDS_FILE)) fs.writeFileSync(FRIENDS_FILE, JSON.stringify([]));
 
 let MOCK_USERS = {
-  'priyanshu': { id: 'u2', username: 'priyanshu', password: '1234' }
+  'priyanshu': { id: 'u2', username: 'priyanshu', password: '1234', email: 'priyanshu@synapse.com' }
 };
 
 if (!fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, JSON.stringify(MOCK_USERS, null, 2));
 } else {
     try { MOCK_USERS = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); } catch(e) {}
+}
+
+// Load servers
+let SERVERS_DATA = { servers: [] };
+try { SERVERS_DATA = JSON.parse(fs.readFileSync(SERVERS_FILE, 'utf8')); } catch(e) {}
+
+function saveServers() {
+    fs.writeFileSync(SERVERS_FILE, JSON.stringify(SERVERS_DATA, null, 2));
 }
 
 // Simple Mock Auth Middleware
@@ -45,10 +54,9 @@ const requireAuth = (req, res, next) => {
 };
 
 // =======================
-// ROUTES
+// AUTH ROUTES
 // =======================
 
-// Fake Login
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   console.log(`[AUTH] Login attempt: ${username}`);
@@ -59,7 +67,7 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const accessToken = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '15m' });
-  res.status(200).json({ accessToken, refreshToken: 'dummy_refresh', userId: user.id });
+  res.status(200).json({ accessToken, refreshToken: 'dummy_refresh', userId: user.id, email: user.email || '' });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -67,11 +75,11 @@ app.post('/api/auth/register', (req, res) => {
     if (!username || !password) return res.status(400).json({ message: 'Username and password required' });
     if (MOCK_USERS[username]) return res.status(400).json({ message: 'Username already taken' });
     
-    // Register the new user dynamically and persist
     MOCK_USERS[username] = {
         id: 'u_' + Date.now(),
         username,
-        password
+        password,
+        email: email || ''
     };
     
     try { 
@@ -83,7 +91,12 @@ app.post('/api/auth/register', (req, res) => {
     console.log(`[AUTH] New User Registered: ${username}`);
     res.status(201).json({ message: 'Registration successful!' });
 });
+
 app.post('/api/auth/refresh', (req, res) => res.json({ accessToken: 'fake_valid_token' }));
+
+// =======================
+// CHAT HISTORY ROUTES
+// =======================
 
 app.get('/api/channels/:channelId/messages', (req, res) => {
     try {
@@ -95,12 +108,114 @@ app.get('/api/channels/:channelId/messages', (req, res) => {
     }
 });
 
-// === FRIENDS API === //
+// =======================
+// SERVER ROUTES
+// =======================
+
+// Discover all servers (for explore page / join modal)
+app.get('/api/servers/discover', requireAuth, (req, res) => {
+    const userId = req.user.userId;
+    const result = SERVERS_DATA.servers.map(s => ({
+        id: s.id,
+        name: s.name,
+        icon: s.icon,
+        memberCount: s.members.length,
+        channelCount: s.channels.length,
+        isJoined: s.members.includes(userId)
+    }));
+    res.json(result);
+});
+
+// Get servers the current user has joined
+app.get('/api/servers/mine', requireAuth, (req, res) => {
+    const userId = req.user.userId;
+    const myServers = SERVERS_DATA.servers
+        .filter(s => s.members.includes(userId))
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            icon: s.icon,
+            channelCount: s.channels.length,
+            memberCount: s.members.length
+        }));
+    res.json(myServers);
+});
+
+// Get a specific server's details (name, channels, members)
+app.get('/api/servers/:id', requireAuth, (req, res) => {
+    const server = SERVERS_DATA.servers.find(s => s.id === req.params.id);
+    if (!server) return res.status(404).json({ message: 'Server not found' });
+    
+    // Resolve member usernames
+    const memberDetails = server.members.map(memberId => {
+        const user = Object.values(MOCK_USERS).find(u => u.id === memberId);
+        return user ? { id: user.id, username: user.username } : { id: memberId, username: 'Unknown' };
+    });
+
+    res.json({
+        id: server.id,
+        name: server.name,
+        icon: server.icon,
+        channels: server.channels,
+        members: memberDetails,
+        ownerId: server.ownerId
+    });
+});
+
+// Join a server
+app.post('/api/servers/:id/join', requireAuth, (req, res) => {
+    const server = SERVERS_DATA.servers.find(s => s.id === req.params.id);
+    if (!server) return res.status(404).json({ message: 'Server not found' });
+    
+    const userId = req.user.userId;
+    if (server.members.includes(userId)) {
+        return res.status(400).json({ message: 'Already a member of this server' });
+    }
+    
+    server.members.push(userId);
+    saveServers();
+    console.log(`[SERVER] ${req.user.username} joined "${server.name}"`);
+    res.json({ message: `Joined ${server.name}!` });
+});
+
+// Leave a server
+app.post('/api/servers/:id/leave', requireAuth, (req, res) => {
+    const server = SERVERS_DATA.servers.find(s => s.id === req.params.id);
+    if (!server) return res.status(404).json({ message: 'Server not found' });
+    
+    const userId = req.user.userId;
+    const idx = server.members.indexOf(userId);
+    if (idx === -1) {
+        return res.status(400).json({ message: 'Not a member of this server' });
+    }
+    
+    server.members.splice(idx, 1);
+    saveServers();
+    console.log(`[SERVER] ${req.user.username} left "${server.name}"`);
+    res.json({ message: `Left ${server.name}` });
+});
+
+// Get server members
+app.get('/api/servers/:id/members', requireAuth, (req, res) => {
+    const server = SERVERS_DATA.servers.find(s => s.id === req.params.id);
+    if (!server) return res.status(404).json({ message: 'Server not found' });
+    
+    const memberDetails = server.members.map(memberId => {
+        const user = Object.values(MOCK_USERS).find(u => u.id === memberId);
+        return user ? { id: user.id, username: user.username } : { id: memberId, username: 'Unknown' };
+    });
+    
+    res.json(memberDetails);
+});
+
+// =======================
+// FRIENDS ROUTES
+// =======================
+
 app.get('/api/friends', requireAuth, (req, res) => {
     let friends = [];
     try { friends = JSON.parse(fs.readFileSync(FRIENDS_FILE, 'utf8')); } catch(e){}
     
-    // Find all requests involving this user
     const userFriends = friends.filter(f => f.user1Id === req.user.userId || f.user2Id === req.user.userId);
     
     const mapped = userFriends.map(f => {
@@ -187,6 +302,11 @@ io.on('connection', (socket) => {
 
   socket.on('join_channel', (channelId) => {
     socket.join(`channel_${channelId}`);
+    console.log(`[WS] ${socket.user.username} joined channel: ${channelId}`);
+  });
+
+  socket.on('leave_channel', (channelId) => {
+    socket.leave(`channel_${channelId}`);
   });
 
   socket.on('send_message', (data) => {
@@ -206,14 +326,30 @@ io.on('connection', (socket) => {
 
     io.to(`channel_${channelId}`).emit('receive_message', message);
   });
+
+  socket.on('disconnect', () => {
+    console.log(`[WS] User disconnected: ${socket.user.username}`);
+  });
 });
 
 httpServer.listen(8080, () => {
   console.log('============================================');
-  console.log(' MOCK SERVER LIVE ON PORT 8080 (No Prisma)  ');
+  console.log(' SYNAPSE SERVER LIVE ON PORT 8080           ');
   console.log('============================================');
-  console.log('Available limits for testing:');
-  console.log('Dynamic Registry LIVE. Feel free to register users via the UI!');
-  console.log('1. priyanshu / 1234');
+  console.log('Endpoints:');
+  console.log('  POST /api/auth/login');
+  console.log('  POST /api/auth/register');
+  console.log('  GET  /api/servers/discover');
+  console.log('  GET  /api/servers/mine');
+  console.log('  GET  /api/servers/:id');
+  console.log('  POST /api/servers/:id/join');
+  console.log('  POST /api/servers/:id/leave');
+  console.log('  GET  /api/servers/:id/members');
+  console.log('  GET  /api/channels/:id/messages');
+  console.log('  GET  /api/friends');
+  console.log('  POST /api/friends');
+  console.log('  POST /api/friends/accept');
+  console.log('============================================');
+  console.log('Test user: priyanshu / 1234');
   console.log('============================================');
 });
