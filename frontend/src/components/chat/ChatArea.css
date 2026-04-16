@@ -41,8 +41,18 @@
   flex: 1;
   overflow-y: auto;
   display: flex;
-  flex-direction: column-reverse; /* Usually messages originate from bottom */
+  flex-direction: column-reverse;
   padding: 16px 0;
+}
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background-color: var(--bg-primary);
 }
 .message-wrapper {
   display: flex;
@@ -118,4 +128,20 @@
   background: transparent;
   color: var(--text-normal);
   font-size: 16px;
+}
+
+/* Chat Input Toolbar Polish */
+.chat-input-actions {
+  display: flex;
+  gap: 16px;
+  margin-left: 16px;
+}
+.action-icon {
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: transform 0.1s ease-in-out;
+}
+.action-icon:hover {
+  color: var(--text-normal);
+  transform: scale(1.1);
 }

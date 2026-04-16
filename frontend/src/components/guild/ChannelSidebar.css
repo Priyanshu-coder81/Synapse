@@ -53,3 +53,67 @@
   background-color: var(--bg-quaternary);
   color: white;
 }
+
+/* User Profile Panel Polish */
+.user-profile-panel {
+  height: 52px;
+  background-color: #232428;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+.user-profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: var(--brand);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.user-profile-status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #232428;
+  background-color: var(--green);
+}
+.user-profile-info {
+  margin-left: 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: pointer;
+}
+.user-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text-header);
+}
+.user-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.user-profile-controls {
+  display: flex;
+  gap: 2px;
+}
+.control-icon {
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+}
+.control-icon:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-normal);
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { PlusCircle, Search, Hash } from 'lucide-react';
+import { PlusCircle, Search, Hash, Gift, Sticker, Smile } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
 import './ChatArea.css';
@@ -21,38 +21,25 @@ const ChatArea: React.FC = () => {
     const token = localStorage.getItem('accessToken');
 
     useEffect(() => {
-        // Connect to WebSocket if authenticated!
         if (isAuthenticated && token) {
             wsClient.connect(token, () => {
-               // When connection succeeds, we subscribe to the active channel
                if (channelId) {
                    const subscription = wsClient.subscribeToChannel(channelId, (newMsg: Message) => {
                        setMessages(prev => [newMsg, ...prev]);
                    });
-                   
-                   return () => {
-                       subscription?.unsubscribe();
-                   };
+                   return () => subscription?.unsubscribe();
                }
             });
         }
-        
-        return () => {
-           // Cleanup connection when component unmounts globally
-           // We might want to keep connection alive at a higher level (in Layout), 
-           // but for now disconnecting handles strict-mode refresh cleanly.
-           wsClient.disconnect();
-        }
+        return () => wsClient.disconnect();
     }, [isAuthenticated, token, channelId]);
 
     const handleSendMessage = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && msg.trim() !== '') {
             if (channelId) {
-                // Send payload over WebSocket
                 wsClient.sendMessage(channelId, msg.trim());
-                setMsg(""); // Clear input
+                setMsg(""); 
             } else {
-                // Mock behavior if no channel is active
                 setMessages([{
                   id: Date.now().toString(),
                   senderUsername: 'You',
@@ -69,7 +56,7 @@ const ChatArea: React.FC = () => {
             <div className="chat-topbar">
                 <div className="chat-topbar-title">
                     <Hash size={24} color="var(--text-muted)" />
-                    {channelId ? `channel-${channelId}` : 'select-a-channel'}
+                    {channelId ? `channel-${channelId}` : 'general'}
                 </div>
                 <div className="chat-search">
                      <input type="text" placeholder="Search" />
@@ -93,7 +80,6 @@ const ChatArea: React.FC = () => {
                    </div>
                  ))}
                  
-                 {/* Dummy welcome message at the top naturally placed at the bottom visually */}
                  <div className="message-wrapper">
                       <div className="message-avatar">W</div>
                       <div className="message-content">
@@ -101,7 +87,7 @@ const ChatArea: React.FC = () => {
                               <span className="message-author">Wumpus</span>
                               <span className="message-timestamp">Today at 10:41 AM</span>
                           </div>
-                          <div className="message-body">Welcome to the channel! Connected to WebSocket engine. Type your message below.</div>
+                          <div className="message-body">Welcome to the channel! Try checking the User Panel in the bottom left, or typing a message down below!</div>
                       </div>
                  </div>
             </div>
@@ -111,12 +97,17 @@ const ChatArea: React.FC = () => {
                     <PlusCircle className="chat-input-icon" size={24} />
                     <input 
                       type="text" 
-                      placeholder={channelId ? `Message #channel-${channelId}` : "Select a channel first..."} 
+                      placeholder={channelId ? `Message #channel-${channelId}` : "Message #general"} 
                       value={msg}
                       onChange={e => setMsg(e.target.value)}
                       onKeyDown={handleSendMessage}
-                      disabled={!channelId}
                     />
+                    {/* Stage 6 Polish: Action Icons Toolbar */}
+                    <div className="chat-input-actions">
+                        <Gift size={22} className="action-icon" />
+                        <Sticker size={22} className="action-icon" />
+                        <Smile size={22} className="action-icon" />
+                    </div>
                 </div>
             </div>
         </div>
