@@ -4,8 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 import hpp from 'hpp';
 import compression from 'compression';
-import { sanitize } from 'express-mongo-sanitize';
-import { globalLimiter } from "./middlewares/rateLimiter.middleware.js";
+//import { globalLimiter } from "./middlewares/rateLimiter.middleware.js";
 
 
 const app = express();
@@ -21,18 +20,11 @@ app.use(
     credentials: true,
   })
 );
-app.use(globalLimiter);
+//app.use(globalLimiter);
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(express.static("public"));
-
-// Sanitization middleware
-app.use((req, _res, next) => {
-  if (req.body) req.body = sanitize(req.body, { replaceWith: "_" });
-  if (req.params) req.params = sanitize(req.params, { replaceWith: "_" });
-  next();
-});
 
 app.use(hpp());
 app.use(compression());

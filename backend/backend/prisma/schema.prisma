@@ -1,10 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -13,7 +8,128 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id               String          @id @default(uuid())
+  email            String          @unique
+  username         String          @unique
+  password         String
+  avatarUrl        String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relationships
+  ownedGuilds      Guild[]         @relation("GuildOwner")
+  memberships      GuildMember[]
+  messages         Message[]
+  
+  // Conversations where the user is one of the participants
+  conversations1   Conversation[]  @relation("Participant1")
+  conversations2   Conversation[]  @relation("Participant2")
+  directMessages   DirectMessage[]
+}
+
+model Guild {
+  id               String          @id @default(uuid())
+  name             String
+  iconUrl          String?
+  inviteCode       String          @unique @default(cuid())
+  ownerId          String
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  owner            User            @relation("GuildOwner", fields: [ownerId], references: [id])
+  members          GuildMember[]
+  channels         Channel[]
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model GuildMember {
+  id               String          @id @default(uuid())
+  role             MemberRole      @default(MEMBER)
+  joinedAt         DateTime        @default(now())
+
+  userId           String
+  guildId          String
+
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guild            Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildId])
+}
+
+model Channel {
+  id               String          @id @default(uuid())
+  name             String
+  topic            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  guildId          String
+  guild            Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  messages         Message[]
+}
+
+model Conversation {
+  id               String          @id @default(uuid())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user1Id          String
+  user2Id          String
+
+  user1            User            @relation("Participant1", fields: [user1Id], references: [id])
+  user2            User            @relation("Participant2", fields: [user2Id], references: [id])
+  
+  directMessages   DirectMessage[]
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id               String          @id @default(uuid())
+  content          String          @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  senderId         String
+  channelId        String
+
+  sender           User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  channel          Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  attachments      Attachment[]    @relation("MessageAttachment")
+}
+
+model DirectMessage {
+  id               String          @id @default(uuid())
+  content          String          @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  senderId         String
+  conversationId   String
+
+  sender           User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation     Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  attachments      Attachment[]    @relation("DirectMessageAttachment")
+}
+
+model Attachment {
+  id               String          @id @default(uuid())
+  fileUrl          String
+  fileName         String
+  fileType         String
+  publicId         String?         // Cloudinary public_id
+  createdAt        DateTime        @default(now())
+
+  messageId        String?
+  message          Message?        @relation("MessageAttachment", fields: [messageId], references: [id], onDelete: Cascade)
+  
+  directMessageId  String?
+  directMessage    DirectMessage?  @relation("DirectMessageAttachment", fields: [directMessageId], references: [id], onDelete: Cascade)
 }
