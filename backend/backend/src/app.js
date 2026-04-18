@@ -30,9 +30,12 @@ app.use(hpp());
 app.use(compression());
 app.use(cookieParser());
 
+// Routes
+import guildRouter from "./routes/guild.routes.js";
+import userRouter from "./routes/user.routes.js";
 
-
-// 404 handler (must be last)
+app.use("/api/guilds", guildRouter);
+app.use("/api/users", userRouter);
 app.use((req, res, _next) => {
   console.log(`404 - ${req.method} ${req.originalUrl}`);
   res.status(404).json({

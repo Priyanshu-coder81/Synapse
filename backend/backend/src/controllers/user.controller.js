@@ -9,7 +9,6 @@ import { generateAccessToken, generateRefreshToken } from '../utils/token.js';
 import {
     registerSchema,
     loginSchema,
-    updateProfileSchema,
     changePasswordSchema,
     updateUserNameSchema
 } from '../validators/user.validators.js';
