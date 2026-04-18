@@ -95,6 +95,7 @@ model Conversation {
 model Message {
   id               String          @id @default(uuid())
   content          String          @db.Text
+  isEdited         Boolean         @default(false)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -110,6 +111,7 @@ model Message {
 model DirectMessage {
   id               String          @id @default(uuid())
   content          String          @db.Text
+  isEdited         Boolean         @default(false)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

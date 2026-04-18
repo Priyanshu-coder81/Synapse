@@ -10,8 +10,7 @@ import compression from 'compression';
 const app = express();
 
 
-
-// Must add global Limiter
+// Middleware
 app.use(helmet());
 
 app.use(
@@ -33,9 +32,11 @@ app.use(cookieParser());
 // Routes
 import guildRouter from "./routes/guild.routes.js";
 import userRouter from "./routes/user.routes.js";
+import messageRouter from "./routes/message.routes.js";
 
 app.use("/api/guilds", guildRouter);
 app.use("/api/users", userRouter);
+app.use("/api/messages", messageRouter);
 app.use((req, res, _next) => {
   console.log(`404 - ${req.method} ${req.originalUrl}`);
   res.status(404).json({

@@ -1,6 +1,8 @@
 import "dotenv/config";
 import prisma from "./config/prisma.js";
 import { app } from './app.js';
+import { createServer } from "http";
+import { initSocket } from "./config/socket.js";
 
 // ─── Diagnostics & Validation ──────────────────────────────────────
 const requiredEnvVars = [
@@ -46,11 +48,14 @@ const startServer = async () => {
         await prisma.$connect();
         console.log("\x1b[32m%s\x1b[0m", "✓ Database connection established successfully.");
 
-        app.on("error", (error) => {
-            console.error("EXPRESS APP ERROR: ", error);
+        const httpServer = createServer(app);
+        initSocket(httpServer);
+
+        httpServer.on("error", (error) => {
+            console.error("SERVER ERROR: ", error);
         });
 
-        app.listen(port, () => {
+        httpServer.listen(port, () => {
             console.log(`\x1b[32m%s\x1b[0m`, `Server is running at http://localhost:${port}`);
         });
     } catch (err) {
