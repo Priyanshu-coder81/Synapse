@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'api.neuralnote.online', // Local mock server
+  baseURL: 'http://localhost:8081/api', // Local mock server
   headers: {
     'Content-Type': 'application/json',
   },

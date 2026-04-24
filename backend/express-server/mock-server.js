@@ -26,6 +26,15 @@ if (!fs.existsSync(FRIENDS_FILE)) fs.writeFileSync(FRIENDS_FILE, JSON.stringify(
 if (!fs.existsSync(POLLS_FILE)) fs.writeFileSync(POLLS_FILE, JSON.stringify([]));
 
 
+let MOCK_USERS = {
+    priyanshu: {
+        id: 'u_admin1',
+        username: 'priyanshu',
+        password: '123',
+        email: 'priyanshu@test.com'
+    }
+};
+
 if (!fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, JSON.stringify(MOCK_USERS, null, 2));
 } else {
@@ -518,9 +527,9 @@ io.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(8080, () => {
+httpServer.listen(8081, () => {
   console.log('============================================');
-  console.log(' SYNAPSE SERVER LIVE ON PORT 8080           ');
+  console.log(' SYNAPSE SERVER LIVE ON PORT 8081           ');
   console.log('============================================');
   console.log('Endpoints:');
   console.log('  POST /api/auth/login');
