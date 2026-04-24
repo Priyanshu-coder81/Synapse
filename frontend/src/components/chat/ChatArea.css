@@ -362,3 +362,35 @@
   color: var(--button-danger);
   background-color: rgba(218, 55, 60, 0.1);
 }
+
+/* ═══════════════════════════════════════
+   Polls Section
+   ═══════════════════════════════════════ */
+.polls-section {
+  padding: 8px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Poll command hint */
+.poll-command-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin: 0 16px 4px;
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(124, 108, 240, 0.06));
+  border: 1px solid rgba(88, 101, 242, 0.15);
+  border-radius: 8px;
+  animation: slideUp 0.2s ease;
+}
+
+.poll-command-hint code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: var(--brand);
+  font-size: 11px;
+}

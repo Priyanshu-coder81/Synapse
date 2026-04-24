@@ -1,0 +1,36 @@
+[
+  {
+    "id": "poll_1777001734932",
+    "channelId": "s1_general",
+    "creatorUsername": "priyanshu",
+    "creatorId": "u2",
+    "question": "What's the best programming language?",
+    "options": [
+      {
+        "id": "opt_0",
+        "text": "JavaScript",
+        "votes": []
+      },
+      {
+        "id": "opt_1",
+        "text": "Python",
+        "votes": []
+      },
+      {
+        "id": "opt_2",
+        "text": "Rust",
+        "votes": [
+          "u2"
+        ]
+      },
+      {
+        "id": "opt_3",
+        "text": "Go",
+        "votes": []
+      }
+    ],
+    "totalVotes": 1,
+    "createdAt": "2026-04-24T03:35:34.932Z",
+    "expiresAt": null
+  }
+]

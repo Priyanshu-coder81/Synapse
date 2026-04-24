@@ -18,14 +18,13 @@ const DB_FILE = path.join(__dirname, 'chats.json');
 const FRIENDS_FILE = path.join(__dirname, 'friends.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
 const SERVERS_FILE = path.join(__dirname, 'servers.json');
+const POLLS_FILE = path.join(__dirname, 'polls.json');
 
 // Initialize text DB files
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify([]));
 if (!fs.existsSync(FRIENDS_FILE)) fs.writeFileSync(FRIENDS_FILE, JSON.stringify([]));
+if (!fs.existsSync(POLLS_FILE)) fs.writeFileSync(POLLS_FILE, JSON.stringify([]));
 
-let MOCK_USERS = {
-  'priyanshu': { id: 'u2', username: 'priyanshu', password: '1234', email: 'priyanshu@synapse.com' }
-};
 
 if (!fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, JSON.stringify(MOCK_USERS, null, 2));
@@ -33,7 +32,6 @@ if (!fs.existsSync(USERS_FILE)) {
     try { MOCK_USERS = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); } catch(e) {}
 }
 
-// Load servers
 let SERVERS_DATA = { servers: [] };
 try { SERVERS_DATA = JSON.parse(fs.readFileSync(SERVERS_FILE, 'utf8')); } catch(e) {}
 
@@ -41,10 +39,8 @@ function saveServers() {
     fs.writeFileSync(SERVERS_FILE, JSON.stringify(SERVERS_DATA, null, 2));
 }
 
-// Online presence tracking
 const onlineUsers = new Map(); // userId -> { username, socketId }
 
-// Simple Mock Auth Middleware
 const requireAuth = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({message: 'No token'});
@@ -348,6 +344,91 @@ app.post('/api/friends/accept', requireAuth, (req, res) => {
 
 
 // =======================
+// POLLS ROUTES
+// =======================
+
+// Create a poll
+app.post('/api/channels/:channelId/polls', requireAuth, (req, res) => {
+    const { channelId } = req.params;
+    const { question, options } = req.body;
+
+    if (!question || !options || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({ message: 'A poll needs a question and at least 2 options.' });
+    }
+    if (options.length > 8) {
+        return res.status(400).json({ message: 'Maximum 8 options allowed.' });
+    }
+
+    const poll = {
+        id: `poll_${Date.now()}`,
+        channelId,
+        creatorUsername: req.user.username,
+        creatorId: req.user.userId,
+        question: question.trim(),
+        options: options.map((opt, idx) => ({
+            id: `opt_${idx}`,
+            text: opt.trim(),
+            votes: []
+        })),
+        totalVotes: 0,
+        createdAt: new Date().toISOString(),
+        expiresAt: null
+    };
+
+    let polls = [];
+    try { polls = JSON.parse(fs.readFileSync(POLLS_FILE, 'utf8')); } catch(e) {}
+    polls.push(poll);
+    fs.writeFileSync(POLLS_FILE, JSON.stringify(polls, null, 2));
+
+    console.log(`[POLL] Created by ${req.user.username} in ${channelId}: "${question}"`);
+    res.status(201).json(poll);
+});
+
+// Get polls for a channel
+app.get('/api/channels/:channelId/polls', requireAuth, (req, res) => {
+    const { channelId } = req.params;
+    let polls = [];
+    try { polls = JSON.parse(fs.readFileSync(POLLS_FILE, 'utf8')); } catch(e) {}
+    const channelPolls = polls.filter(p => p.channelId === channelId);
+    res.json(channelPolls);
+});
+
+// Vote on a poll
+app.post('/api/polls/:pollId/vote', requireAuth, (req, res) => {
+    const { pollId } = req.params;
+    const { optionId } = req.body;
+
+    let polls = [];
+    try { polls = JSON.parse(fs.readFileSync(POLLS_FILE, 'utf8')); } catch(e) {}
+    
+    const poll = polls.find(p => p.id === pollId);
+    if (!poll) return res.status(404).json({ message: 'Poll not found' });
+
+    // Remove any existing vote by this user (allows vote changing)
+    poll.options.forEach(opt => {
+        opt.votes = opt.votes.filter(v => v !== req.user.userId);
+    });
+
+    // Add the new vote
+    const option = poll.options.find(o => o.id === optionId);
+    if (!option) return res.status(400).json({ message: 'Invalid option' });
+    option.votes.push(req.user.userId);
+
+    // Recalculate total
+    poll.totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0);
+
+    fs.writeFileSync(POLLS_FILE, JSON.stringify(polls, null, 2));
+
+    console.log(`[POLL] ${req.user.username} voted for "${option.text}" in poll "${poll.question}"`);
+    
+    // Broadcast poll update via WebSocket to the channel
+    io.to(`channel_${poll.channelId}`).emit('poll_updated', poll);
+    
+    res.json(poll);
+});
+
+
+// =======================
 // WEBSOCKETS
 // =======================
 
@@ -453,11 +534,13 @@ httpServer.listen(8080, () => {
   console.log('  GET  /api/servers/:id/members');
   console.log('  GET  /api/channels/:id/messages');
   console.log('  DEL  /api/channels/:id/messages/:mid');
+  console.log('  POST /api/channels/:id/polls  (CREATE POLL)');
+  console.log('  GET  /api/channels/:id/polls');
+  console.log('  POST /api/polls/:id/vote');
   console.log('  GET  /api/friends');
   console.log('  POST /api/friends');
   console.log('  POST /api/friends/accept');
-  console.log('  WS   typing_start / typing_stop');
-  console.log('  WS   presence_update');
+  console.log('  WS   typing / presence / poll_updated');
   console.log('============================================');
   console.log('Test user: priyanshu / 1234');
   console.log('============================================');

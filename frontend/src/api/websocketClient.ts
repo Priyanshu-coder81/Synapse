@@ -89,6 +89,12 @@ class WebSocketService {
     return () => { this.socket?.off('presence_update', callback); };
   }
 
+  // Poll updates
+  onPollUpdated(callback: (poll: any) => void) {
+    this.socket?.on('poll_updated', callback);
+    return () => { this.socket?.off('poll_updated', callback); };
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();

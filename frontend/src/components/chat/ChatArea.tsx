@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { PlusCircle, Search, Hash, Gift, Sticker, Smile, Menu, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Hash, Gift, Sticker, Smile, Menu, Trash2, BarChart3 } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServerStore } from '../../store/useServerStore';
@@ -9,8 +9,8 @@ import axiosClient from '../../api/axiosClient';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import PollCard from './PollCard';
 import './ChatArea.css';
 
 const SAMPLE_GIFS = [
@@ -30,14 +30,26 @@ interface Message {
   channelId?: string;
 }
 
+interface Poll {
+  id: string;
+  channelId: string;
+  creatorUsername: string;
+  question: string;
+  options: { id: string; text: string; votes: string[] }[];
+  totalVotes: number;
+  createdAt: string;
+}
+
 const ChatArea: React.FC = () => {
     const { channelId } = useParams<{ channelId: string }>();
     const [msg, setMsg] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
+    const [polls, setPolls] = useState<Poll[]>([]);
     
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showGifPicker, setShowGifPicker] = useState(false);
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
+    const [showPollHint, setShowPollHint] = useState(false);
     
     const { isAuthenticated } = useAuthStore();
     const { currentServer } = useServerStore();
@@ -47,16 +59,22 @@ const ChatArea: React.FC = () => {
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isTypingRef = useRef(false);
 
+    const currentUserId = useAuthStore.getState().userId || '';
+    const currentUsername = useAuthStore.getState().username;
+
     useEffect(() => {
         channelIdRef.current = channelId;
     }, [channelId]);
 
     const channelName = currentServer?.channels.find(c => c.id === channelId)?.name || channelId || 'general';
 
+    // Fetch messages + polls on channel change
     useEffect(() => {
         if (!channelId) return;
         setMessages([]);
+        setPolls([]);
         setTypingUsers([]);
+
         const fetchHistory = async () => {
              try {
                  const res = await axiosClient.get(`/channels/${channelId}/messages`);
@@ -65,7 +83,18 @@ const ChatArea: React.FC = () => {
                  }
              } catch(e) {}
         };
+        
+        const fetchPolls = async () => {
+            try {
+                const res = await axiosClient.get(`/channels/${channelId}/polls`);
+                if (Array.isArray(res.data)) {
+                    setPolls(res.data);
+                }
+            } catch(e) {}
+        };
+
         fetchHistory();
+        fetchPolls();
     }, [channelId]);
 
     useEffect(() => {
@@ -104,12 +133,18 @@ const ChatArea: React.FC = () => {
             }
         });
 
+        // Real-time poll updates
+        const cleanupPoll = wsClient.onPollUpdated((updatedPoll: Poll) => {
+            setPolls(prev => prev.map(p => p.id === updatedPoll.id ? updatedPoll : p));
+        });
+
         return () => {
             subscription?.unsubscribe();
             wsClient.leaveChannel(channelId);
             cleanupTyping?.();
             cleanupStopTyping?.();
             cleanupDelete?.();
+            cleanupPoll?.();
         };
     }, [channelId, isAuthenticated, token]);
 
@@ -131,10 +166,39 @@ const ChatArea: React.FC = () => {
         }, 2000);
     }, [channelId]);
 
-    const handleSendMessage = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Parse /poll command: /poll "Question" "Opt1" "Opt2" "Opt3"
+    const parsePollCommand = (text: string): { question: string; options: string[] } | null => {
+        if (!text.startsWith('/poll ')) return null;
+        const regex = /"([^"]+)"/g;
+        const matches = [];
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            matches.push(match[1]);
+        }
+        if (matches.length < 3) return null; // Need question + at least 2 options
+        return { question: matches[0], options: matches.slice(1) };
+    };
+
+    const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && msg.trim() !== '') {
             if (channelId) {
                 const text = msg.trim();
+                
+                // Check if it's a poll command
+                const pollData = parsePollCommand(text);
+                if (pollData) {
+                    try {
+                        const res = await axiosClient.post(`/channels/${channelId}/polls`, pollData);
+                        setPolls(prev => [...prev, res.data]);
+                        toast.success('Poll created!', { description: pollData.question });
+                    } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to create poll');
+                    }
+                    setMsg("");
+                    return;
+                }
+
+                // Normal message
                 wsClient.sendMessage(channelId, text);
                 
                 isTypingRef.current = false;
@@ -166,6 +230,10 @@ const ChatArea: React.FC = () => {
         }
     };
 
+    const handlePollUpdate = (updatedPoll: Poll) => {
+        setPolls(prev => prev.map(p => p.id === updatedPoll.id ? updatedPoll : p));
+    };
+
     const handleSendGif = (url: string) => {
         if (channelId) {
             wsClient.sendMessage(channelId, url);
@@ -189,7 +257,14 @@ const ChatArea: React.FC = () => {
     };
 
     const isGifUrl = (url: string) => url.startsWith('http') && url.includes('.gif');
-    const currentUsername = useAuthStore.getState().username;
+
+    // Show poll hint when user starts typing /poll
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setMsg(val);
+        setShowPollHint(val.startsWith('/poll'));
+        handleTyping();
+    };
 
     return (
         <div className="chat-container">
@@ -206,6 +281,20 @@ const ChatArea: React.FC = () => {
             </div>
             
             <div className="chat-messages">
+                 {/* Poll Cards — rendered above messages */}
+                 {polls.length > 0 && (
+                    <div className="polls-section">
+                        {polls.map(poll => (
+                            <PollCard
+                                key={poll.id}
+                                poll={poll}
+                                currentUserId={currentUserId}
+                                onPollUpdate={handlePollUpdate}
+                            />
+                        ))}
+                    </div>
+                 )}
+
                  {messages.map((m) => (
                    <div key={m.id} className="message-wrapper group">
                         <Avatar className="h-10 w-10 bg-gradient-to-br from-[var(--brand)] to-[#7c6cf0] shrink-0">
@@ -245,11 +334,14 @@ const ChatArea: React.FC = () => {
                    </div>
                  ))}
                  
-                 {messages.length === 0 && channelId && (
+                 {messages.length === 0 && polls.length === 0 && channelId && (
                     <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] gap-2">
                         <Hash size={48} className="opacity-30" />
                         <div className="text-xl font-bold text-[var(--text-header)]">Welcome to #{channelName}!</div>
                         <div className="text-sm">This is the start of the #{channelName} channel.</div>
+                        <div className="text-xs mt-2 opacity-60">
+                            💡 Try: <code className="bg-white/5 px-2 py-1 rounded text-[var(--brand)]">/poll "Question?" "Option 1" "Option 2"</code>
+                        </div>
                     </div>
                  )}
             </div>
@@ -271,6 +363,19 @@ const ChatArea: React.FC = () => {
                 </div>
             )}
 
+            {/* Poll command hint */}
+            {showPollHint && (
+                <div className="poll-command-hint">
+                    <BarChart3 size={16} className="text-[var(--brand)]" />
+                    <div>
+                        <div className="font-semibold text-white text-sm">Create a Poll</div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                            Format: <code>/poll "Your question?" "Option 1" "Option 2" "Option 3"</code>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="chat-input-wrapper">
                 <div className="chat-input-box">
                     <PlusCircle className="chat-input-icon" size={24} />
@@ -278,7 +383,7 @@ const ChatArea: React.FC = () => {
                       type="text" 
                       placeholder={`Message #${channelName}`} 
                       value={msg}
-                      onChange={e => { setMsg(e.target.value); handleTyping(); }}
+                      onChange={handleInputChange}
                       onKeyDown={handleSendMessage}
                     />
                     <div className="chat-input-actions">
