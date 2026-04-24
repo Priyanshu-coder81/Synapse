@@ -49,7 +49,7 @@ const GuildSidebar: React.FC = () => {
         <div className="guild-separator" />
 
         {/* Dynamic Servers from API */}
-        {myServers.map((server) => {
+        {Array.isArray(myServers) && myServers.map((server) => {
           const isActive = location.pathname.includes(`/channels/${server.id}`);
           return (
             <div className="guild-item-wrapper" key={server.id}>
@@ -79,9 +79,9 @@ const GuildSidebar: React.FC = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <button className="guild-icon add-server-btn">
+                  <div className="guild-icon add-server-btn">
                     <Plus size={24} />
-                  </button>
+                  </div>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-semibold">
