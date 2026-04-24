@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1776977383949",
+    "senderUsername": "priyanshu",
+    "content": "Hello Synapse!",
+    "channelId": "s1_general",
+    "createdAt": "2026-04-23T20:49:43.949Z"
+  },
+  {
+    "id": "1776979076296",
+    "senderUsername": "priyanshu",
+    "content": "Hello from the improved Synapse!",
+    "channelId": "s1_general",
+    "createdAt": "2026-04-23T21:17:56.296Z"
+  },
+  {
+    "id": "1776999195746",
+    "senderUsername": "icebear",
+    "content": "Hi",
+    "channelId": "u_1776977961806_u2",
+    "createdAt": "2026-04-24T02:53:15.746Z"
+  },
+  {
+    "id": "1777000442808",
+    "senderUsername": "priyanshu",
+    "content": "Hi",
+    "channelId": "u_1776977961806_u2",
+    "createdAt": "2026-04-24T03:14:02.808Z"
+  }
+]

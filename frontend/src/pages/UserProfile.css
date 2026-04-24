@@ -4,6 +4,7 @@
     height: 100dvh;
     display: flex;
     overflow: hidden;
+    animation: fadeIn 0.2s ease;
 }
 
 .settings-sidebar {
@@ -26,30 +27,32 @@
 
 .settings-nav-header {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     margin: 12px 10px 4px 10px;
+    letter-spacing: 0.5px;
 }
 
 .settings-nav-item {
     color: var(--text-normal);
-    padding: 6px 10px;
-    border-radius: 4px;
+    padding: 7px 10px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 15px;
     font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    transition: all var(--transition-smooth);
 }
 
 .settings-nav-item:hover {
-    background-color: var(--bg-modifier-hover);
-    color: var(--text-normal);
+    background-color: rgba(255,255,255,0.04);
+    color: white;
 }
 
 .settings-nav-item.active {
-    background-color: var(--bg-modifier-selected);
+    background-color: rgba(255,255,255,0.06);
     color: white;
 }
 
@@ -64,7 +67,7 @@
 
 .settings-separator {
     height: 1px;
-    background-color: var(--bg-modifier-accent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
     width: 172px;
     margin: 8px 10px;
 }
@@ -79,6 +82,7 @@
 
 .settings-content {
     max-width: 740px;
+    animation: slideUp 0.3s ease;
 }
 
 .settings-close {
@@ -91,15 +95,16 @@
     gap: 4px;
     cursor: pointer;
     color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.settings-close:hover {
+    color: var(--text-normal);
 }
 
 .settings-close span {
     font-size: 13px;
     font-weight: 600;
-}
-
-.settings-close:hover .close-button {
-    background-color: var(--bg-modifier-hover);
 }
 
 .close-button {
@@ -111,19 +116,37 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    transition: background-color 0.1s;
+    transition: all var(--transition-smooth);
 }
 
+.settings-close:hover .close-button {
+    border-color: var(--text-normal);
+    background-color: rgba(255,255,255,0.06);
+    transform: rotate(90deg);
+}
+
+/* ═══════════════════════════════════════
+   Profile Hero Card
+   ═══════════════════════════════════════ */
 .profile-hero-card {
     background-color: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     margin-bottom: 40px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 
 .profile-hero-banner {
     height: 100px;
-    background-color: var(--brand);
+    background: linear-gradient(135deg, var(--brand), #7c6cf0, #a78bfa);
+    background-size: 200% 200%;
+    animation: gradientBG 8s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .profile-hero-info {
@@ -131,7 +154,7 @@
     align-items: center;
     padding: 32px 24px 16px 24px;
     position: relative;
-    border-bottom: 1px solid var(--bg-modifier-accent);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     gap: 12px;
 }
 
@@ -141,7 +164,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: var(--bg-secondary);
+    background: linear-gradient(135deg, var(--brand), #7c6cf0);
     border: 6px solid var(--bg-tertiary);
     display: flex;
     align-items: center;
@@ -151,6 +174,11 @@
     color: white;
     overflow: hidden;
     flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.profile-hero-avatar:hover {
+    transform: scale(1.05);
 }
 
 .avatar-upload-overlay {
@@ -167,6 +195,7 @@
     opacity: 0;
     transition: opacity 0.2s;
     text-transform: uppercase;
+    backdrop-filter: blur(2px);
 }
 .profile-hero-avatar:hover .avatar-upload-overlay {
     opacity: 1;
@@ -181,6 +210,7 @@
     background-color: #23a559;
     border: 4px solid var(--bg-tertiary);
     border-radius: 50%;
+    box-shadow: 0 0 6px rgba(35, 165, 89, 0.4);
 }
 
 .profile-hero-nameblock {
@@ -198,15 +228,18 @@
 }
 
 .profile-tag {
-    color: var(--text-normal);
+    color: var(--text-muted);
     font-size: 14px;
 }
 
+/* ═══════════════════════════════════════
+   Profile Details
+   ═══════════════════════════════════════ */
 .profile-hero-details {
     padding: 16px 24px;
-    background-color: #2b2d31;
+    background-color: rgba(43, 45, 49, 0.6);
     margin: 16px;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 .detail-row {
@@ -214,7 +247,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid var(--bg-modifier-accent);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background-color var(--transition-fast);
+}
+
+.detail-row:hover {
+    background-color: rgba(255,255,255,0.01);
 }
 
 .detail-col {
@@ -224,9 +262,10 @@
 
 .detail-label {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     margin-bottom: 4px;
+    letter-spacing: 0.5px;
 }
 
 .detail-value {
@@ -235,22 +274,28 @@
 }
 
 .btn-secondary {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-quaternary);
     color: white;
     border: none;
-    border-radius: 3px;
-    padding: 6px 16px;
+    border-radius: 4px;
+    padding: 7px 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all var(--transition-smooth);
+    font-size: 13px;
 }
 
 .btn-secondary:hover {
     background-color: #4e5058;
 }
 
+.settings-section {
+    margin-bottom: 40px;
+}
+
 .section-title {
     color: var(--text-header);
     font-size: 18px;
     margin-bottom: 16px;
+    font-weight: 600;
 }

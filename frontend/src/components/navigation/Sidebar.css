@@ -31,7 +31,7 @@
   width: 4px;
   background-color: var(--text-normal);
   border-radius: 0 4px 4px 0;
-  transition: all var(--transition-fast);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .guild-pill.inactive {
@@ -62,9 +62,10 @@
   justify-content: center;
   font-weight: 600;
   font-size: 16px;
-  transition: all var(--transition-fast);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
   overflow: hidden;
+  position: relative;
 }
 
 .guild-icon img {
@@ -74,27 +75,32 @@
 }
 
 .guild-item-wrapper:hover .guild-icon {
-  border-radius: 16px; /* Squircle jump */
+  border-radius: 16px;
   background-color: var(--brand);
   color: white;
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.35);
 }
 
 .guild-icon.active {
   border-radius: 16px;
   background-color: var(--brand);
   color: white;
+  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
 }
 
 /* Add Server Button Specific */
-.add-server-btn:hover {
-  background-color: var(--green) !important;
-  color: white !important;
-  border-color: var(--green) !important;
-}
 .add-server-btn {
   border: 1px dashed var(--green);
   background-color: transparent !important;
   color: var(--green);
+}
+
+.add-server-btn:hover {
+  background-color: var(--green) !important;
+  color: white !important;
+  border-color: var(--green) !important;
+  border-style: solid !important;
+  box-shadow: var(--glow-green) !important;
 }
 
 /* Discover button */
@@ -105,12 +111,58 @@
 .discover-btn:hover {
   background-color: var(--green) !important;
   color: white !important;
+  box-shadow: var(--glow-green) !important;
 }
 
 .guild-separator {
   height: 2px;
   width: 32px;
-  background-color: var(--bg-quaternary);
+  background: linear-gradient(90deg, transparent, var(--bg-quaternary), transparent);
   border-radius: 1px;
   margin: 4px 0;
 }
+
+/* ═══════════════════════════════════════
+   Add Server Dropdown Menu
+   ═══════════════════════════════════════ */
+.add-server-menu {
+  position: absolute;
+  left: 72px;
+  top: 0;
+  background-color: var(--bg-modal);
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 200;
+  animation: popIn 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.add-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: var(--text-normal);
+  font-size: 14px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.add-menu-item:hover {
+  background-color: var(--brand);
+  color: white;
+}
+
+.add-menu-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 12px;
+}
+

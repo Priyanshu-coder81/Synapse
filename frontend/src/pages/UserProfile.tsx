@@ -5,7 +5,7 @@ import { LogOut } from 'lucide-react';
 import './UserProfile.css';
 
 const UserProfile: React.FC = () => {
-    const { username, logout } = useAuthStore();
+    const { username, email, logout } = useAuthStore();
     const navigate = useNavigate();
     const [showEmail, setShowEmail] = useState(false);
     
@@ -149,7 +149,7 @@ const UserProfile: React.FC = () => {
                                     <div className="detail-row" style={{ borderBottom: 'none' }}>
                                         <div className="detail-col">
                                             <span className="detail-label">EMAIL</span>
-                                            <span className="detail-value">{showEmail ? `${username}@synapse.com` : '*********@synapse.com'}</span>
+                                            <span className="detail-value">{showEmail ? (email || `${username}@synapse.com`) : '*********@***.com'}</span>
                                         </div>
                                         <button className="btn-secondary" onClick={() => setShowEmail(!showEmail)}>
                                             {showEmail ? 'Hide' : 'Reveal'}

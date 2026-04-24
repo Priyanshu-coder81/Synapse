@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'https://api.neuralnote.online/api', // Production API URL
+  baseURL: 'http://localhost:8080/api', // Local mock server
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,7 +28,7 @@ axiosClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const res = await axios.post('https://api.neuralnote.online/api/auth/refresh', { refreshToken });
+          const res = await axios.post('http://localhost:8080/api/auth/refresh', { refreshToken });
           
           localStorage.setItem('accessToken', res.data.accessToken);
           if (res.data.refreshToken) {

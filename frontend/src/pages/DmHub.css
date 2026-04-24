@@ -6,7 +6,7 @@
 
 .dm-main-area {
   flex: 1;
-  background-color: var(--bg-tertiary); /* Deep grey background for messages area */
+  background-color: var(--bg-tertiary);
   display: flex;
   flex-direction: column;
 }
@@ -16,9 +16,10 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  border-bottom: 1px solid #111214; 
+  border-bottom: 1px solid rgba(0,0,0,0.25);
   gap: 16px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  flex-shrink: 0;
 }
 
 .dm-topbar-title {
@@ -34,26 +35,26 @@
 .topbar-separator {
   width: 1px;
   height: 24px;
-  background-color: var(--bg-quaternary);
+  background-color: rgba(255,255,255,0.08);
 }
 
 .dm-topbar-nav {
   display: flex;
-  gap: 16px;
-  font-size: 15px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .dm-topbar-nav span {
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 4px;
-  transition: all var(--transition-fast);
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all var(--transition-smooth);
 }
 
 .dm-topbar-nav span:hover {
-  background-color: var(--bg-secondary);
+  background-color: rgba(255,255,255,0.04);
   color: var(--text-normal);
 }
 
@@ -63,8 +64,13 @@
 }
 
 .dm-topbar-nav span.add-friend {
-  background-color: var(--green);
+  background: linear-gradient(135deg, var(--green), #2dd4bf);
   color: white;
+  font-weight: 600;
+}
+
+.dm-topbar-nav span.add-friend:hover {
+  box-shadow: var(--glow-green);
 }
 
 .dm-content {
@@ -72,8 +78,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   color: var(--text-muted);
+  overflow-y: auto;
 }
 
 .empty-state-img {
@@ -81,7 +88,7 @@
   height: 220px;
   background: linear-gradient(135deg, var(--bg-secondary) 0%, #1e1f22 100%);
   border-radius: 12px;
-  border: 1px dashed var(--bg-quaternary);
+  border: 1px dashed rgba(255,255,255,0.06);
   margin-bottom: 32px;
   display: flex;
   align-items: center;

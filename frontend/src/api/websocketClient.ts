@@ -9,7 +9,7 @@ class WebSocketService {
       return;
     }
 
-    this.socket = io('https://api.neuralnote.online', {
+    this.socket = io('http://localhost:8080', {
       auth: { token },
       withCredentials: true
     });
@@ -56,6 +56,37 @@ class WebSocketService {
     }
     
     this.socket.emit('send_message', { channelId, content });
+  }
+
+  // Typing Indicators
+  sendTypingStart(channelId: string) {
+    this.socket?.emit('typing_start', channelId);
+  }
+
+  sendTypingStop(channelId: string) {
+    this.socket?.emit('typing_stop', channelId);
+  }
+
+  onUserTyping(callback: (data: { username: string; channelId: string }) => void) {
+    this.socket?.on('user_typing', callback);
+    return () => { this.socket?.off('user_typing', callback); };
+  }
+
+  onUserStopTyping(callback: (data: { username: string; channelId: string }) => void) {
+    this.socket?.on('user_stop_typing', callback);
+    return () => { this.socket?.off('user_stop_typing', callback); };
+  }
+
+  // Message deletion
+  onMessageDeleted(callback: (data: { messageId: string; channelId: string }) => void) {
+    this.socket?.on('message_deleted', callback);
+    return () => { this.socket?.off('message_deleted', callback); };
+  }
+
+  // Online Presence
+  onPresenceUpdate(callback: (data: { userId: string; username: string; status: string }) => void) {
+    this.socket?.on('presence_update', callback);
+    return () => { this.socket?.off('presence_update', callback); };
   }
 
   disconnect() {

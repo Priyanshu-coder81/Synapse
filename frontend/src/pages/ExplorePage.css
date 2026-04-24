@@ -12,22 +12,24 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid #111214;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0,0,0,0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
 }
 
 .explore-back-btn {
   background: none;
   color: var(--text-muted);
-  padding: 4px;
-  border-radius: 4px;
+  padding: 6px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
+  transition: all var(--transition-smooth);
 }
 .explore-back-btn:hover {
   color: var(--text-normal);
-  background-color: var(--bg-tertiary);
+  background-color: rgba(255,255,255,0.06);
+  transform: translateX(-2px);
 }
 
 .explore-title {
@@ -42,16 +44,24 @@
   padding: 0 32px 32px;
 }
 
+/* ═══════════════════════════════════════
+   Hero Section
+   ═══════════════════════════════════════ */
 .explore-hero {
   text-align: center;
-  padding: 48px 0 32px;
+  padding: 56px 0 40px;
+  position: relative;
 }
 
 .explore-hero h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: white;
-  margin-bottom: 8px;
+  background: linear-gradient(135deg, #ffffff, #a78bfa, #7c6cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
 }
 
 .explore-hero p {
@@ -59,8 +69,12 @@
   font-size: 15px;
   max-width: 480px;
   margin: 0 auto;
+  line-height: 1.5;
 }
 
+/* ═══════════════════════════════════════
+   Server Cards
+   ═══════════════════════════════════════ */
 .explore-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -73,22 +87,32 @@
   background-color: var(--bg-secondary);
   border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: default;
+  border: 1px solid transparent;
 }
 
 .explore-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(88, 101, 242, 0.15);
+  border-color: rgba(88, 101, 242, 0.1);
 }
 
 .explore-card-banner {
-  height: 100px;
+  height: 110px;
   background: linear-gradient(135deg, var(--brand), #7c6cf0, #a78bfa);
+  background-size: 200% 200%;
+  animation: gradientBG 6s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .explore-card-icon {
@@ -96,13 +120,19 @@
   height: 56px;
   border-radius: 16px;
   background-color: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 24px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.explore-card:hover .explore-card-icon {
+  transform: scale(1.1) rotate(-3deg);
 }
 
 .explore-card-body {
@@ -137,15 +167,18 @@
   gap: 6px;
   width: 100%;
   padding: 10px;
-  background-color: var(--green);
+  background: linear-gradient(135deg, var(--green), #2dd4bf);
   color: white;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
+  transition: all var(--transition-smooth);
 }
 
 .explore-card-join:hover {
-  background-color: var(--green-hover);
+  background: linear-gradient(135deg, var(--green-hover), #14b8a6);
+  transform: translateY(-1px);
+  box-shadow: var(--glow-green);
 }
 
 .explore-card-joined {
@@ -158,8 +191,9 @@
   color: var(--green);
   font-size: 14px;
   font-weight: 600;
-  border: 1px solid var(--green);
-  border-radius: 6px;
+  border: 1px solid rgba(35, 165, 89, 0.3);
+  border-radius: 8px;
+  background: rgba(35, 165, 89, 0.06);
 }
 
 .explore-empty {
@@ -169,21 +203,10 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  animation: fadeIn 0.5s ease;
 }
 
 .explore-empty p {
   color: var(--text-muted);
   font-size: 15px;
-}
-
-/* Scrollbar */
-.explore-content::-webkit-scrollbar {
-  width: 8px;
-}
-.explore-content::-webkit-scrollbar-thumb {
-  background-color: var(--bg-secondary);
-  border-radius: 4px;
-}
-.explore-content::-webkit-scrollbar-track {
-  background-color: var(--bg-primary);
 }

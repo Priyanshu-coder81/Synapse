@@ -1,0 +1,20 @@
+{
+  "priyanshu": {
+    "id": "u2",
+    "username": "priyanshu",
+    "password": "1234",
+    "email": "priyanshu@synapse.com"
+  },
+  "testuser_1776972046": {
+    "id": "u_1776972046407",
+    "username": "testuser_1776972046",
+    "password": "testpassword",
+    "email": "testuser_1776972046@example.com"
+  },
+  "icebear": {
+    "id": "u_1776977961806",
+    "username": "icebear",
+    "password": "1234",
+    "email": "yatharthk2406@gmail.com"
+  }
+}

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import AuthNavbar from '../components/navigation/AuthNavbar';
+import { toast } from 'sonner';
 import './Auth.css';
 
 const Register: React.FC = () => {
@@ -9,18 +12,23 @@ const Register: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     try {
       await axiosClient.post('/auth/register', { email, username, password });
+      toast.success('Account created!', { description: 'You can now log in.' });
       navigate('/login');
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || 'Registration failed. Username or email might be taken.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,48 +39,52 @@ const Register: React.FC = () => {
         <div className="auth-card">
           <h2>Create an account</h2>
           
-          {error && <div style={{ color: 'var(--button-danger)', fontSize: '13px', marginBottom: '16px', fontWeight: 'bold' }}>{error}</div>}
+          {error && <div className="text-sm text-destructive font-semibold mb-4">{error}</div>}
 
           <form className="auth-form" onSubmit={handleRegister}>
             <div className="input-group">
               <label htmlFor="email">Email</label>
-              <input 
+              <Input 
                 id="email"
                 type="email" 
-                className="text-input" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
+                className="bg-[var(--input-bg)] border-white/5 text-white h-11 placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </div>
             
             <div className="input-group">
               <label htmlFor="username">Username</label>
-              <input 
+              <Input 
                 id="username"
                 type="text" 
-                className="text-input" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required 
+                required
+                className="bg-[var(--input-bg)] border-white/5 text-white h-11 placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </div>
             
             <div className="input-group">
               <label htmlFor="password">Password</label>
-              <input 
+              <Input 
                 id="password"
                 type="password" 
-                className="text-input" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
+                className="bg-[var(--input-bg)] border-white/5 text-white h-11 placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </div>
             
-            <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-              Continue
-            </button>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full h-11 mt-2 bg-gradient-to-r from-[var(--brand)] to-[#7c6cf0] text-white font-semibold text-base hover:shadow-[0_0_20px_rgba(88,101,242,0.3)] hover:-translate-y-0.5 transition-all"
+            >
+              {loading ? 'Creating account...' : 'Continue'}
+            </Button>
           </form>
           
           <div className="auth-footer">

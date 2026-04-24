@@ -17,16 +17,22 @@
   gap: 12px;
   text-decoration: none;
   color: white;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
 }
 
 .auth-navbar-brand:hover {
-  opacity: 0.8;
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .brand-icon {
   color: var(--brand);
-  filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.4));
+  filter: drop-shadow(0 0 12px rgba(88, 101, 242, 0.5));
+  transition: filter 0.3s ease;
+}
+
+.auth-navbar-brand:hover .brand-icon {
+  filter: drop-shadow(0 0 16px rgba(88, 101, 242, 0.7));
 }
 
 .brand-text {
@@ -47,11 +53,12 @@
   text-decoration: none;
   font-weight: 600;
   font-size: 15px;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .auth-navbar-links a:hover {
   color: var(--brand);
+  text-decoration: none;
 }
 
 .nav-btn-secondary {
@@ -64,15 +71,16 @@
   color: black !important;
   padding: 10px 24px;
   border-radius: 24px;
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-weight: 600;
 }
 
 .nav-btn-primary:hover {
-  background-color: var(--brand);
+  background: linear-gradient(135deg, var(--brand), #7c6cf0);
   color: white !important;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(88, 101, 242, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.4);
 }
 
 @media (max-width: 768px) {

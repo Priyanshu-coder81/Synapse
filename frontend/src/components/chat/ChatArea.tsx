@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { PlusCircle, Search, Hash, Gift, Sticker, Smile, Menu } from 'lucide-react';
+import { PlusCircle, Search, Hash, Gift, Sticker, Smile, Menu, Trash2 } from 'lucide-react';
 import { wsClient } from '../../api/websocketClient';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServerStore } from '../../store/useServerStore';
 import { useUIStore } from '../../store/useUIStore';
 import axiosClient from '../../api/axiosClient';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from 'sonner';
 import './ChatArea.css';
 
 const SAMPLE_GIFS = [
@@ -33,25 +37,26 @@ const ChatArea: React.FC = () => {
     
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showGifPicker, setShowGifPicker] = useState(false);
+    const [typingUsers, setTypingUsers] = useState<string[]>([]);
     
     const { isAuthenticated } = useAuthStore();
     const { currentServer } = useServerStore();
     const { toggleMobileSidebar } = useUIStore();
     const token = localStorage.getItem('accessToken');
     const channelIdRef = useRef(channelId);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isTypingRef = useRef(false);
 
-    // Keep ref in sync
     useEffect(() => {
         channelIdRef.current = channelId;
     }, [channelId]);
 
-    // Resolve channel name from server store
     const channelName = currentServer?.channels.find(c => c.id === channelId)?.name || channelId || 'general';
 
-    // Fetch history when channel changes
     useEffect(() => {
         if (!channelId) return;
-        setMessages([]); // Clear messages on channel switch
+        setMessages([]);
+        setTypingUsers([]);
         const fetchHistory = async () => {
              try {
                  const res = await axiosClient.get(`/channels/${channelId}/messages`);
@@ -63,18 +68,12 @@ const ChatArea: React.FC = () => {
         fetchHistory();
     }, [channelId]);
 
-    // WebSocket connection — connect once, manage subscriptions per channel
     useEffect(() => {
         if (!isAuthenticated || !token) return;
-
         wsClient.connect(token);
-
-        return () => {
-            // Only disconnect on full unmount (e.g., logout), not channel switch
-        };
+        return () => {};
     }, [isAuthenticated, token]);
 
-    // Subscribe to channel — separate effect so it reacts to channelId changes
     useEffect(() => {
         if (!channelId || !isAuthenticated || !token) return;
 
@@ -87,11 +86,50 @@ const ChatArea: React.FC = () => {
             }
         });
 
+        const cleanupTyping = wsClient.onUserTyping((data) => {
+            if (data.channelId === channelIdRef.current) {
+                setTypingUsers(prev => prev.includes(data.username) ? prev : [...prev, data.username]);
+            }
+        });
+
+        const cleanupStopTyping = wsClient.onUserStopTyping((data) => {
+            if (data.channelId === channelIdRef.current) {
+                setTypingUsers(prev => prev.filter(u => u !== data.username));
+            }
+        });
+
+        const cleanupDelete = wsClient.onMessageDeleted((data) => {
+            if (data.channelId === channelIdRef.current) {
+                setMessages(prev => prev.filter(m => m.id !== data.messageId));
+            }
+        });
+
         return () => {
             subscription?.unsubscribe();
             wsClient.leaveChannel(channelId);
+            cleanupTyping?.();
+            cleanupStopTyping?.();
+            cleanupDelete?.();
         };
     }, [channelId, isAuthenticated, token]);
+
+    const handleTyping = useCallback(() => {
+        if (!channelId) return;
+        
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            wsClient.sendTypingStart(channelId);
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            wsClient.sendTypingStop(channelId);
+        }, 2000);
+    }, [channelId]);
 
     const handleSendMessage = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && msg.trim() !== '') {
@@ -99,7 +137,10 @@ const ChatArea: React.FC = () => {
                 const text = msg.trim();
                 wsClient.sendMessage(channelId, text);
                 
-                // Optimistic UI update
+                isTypingRef.current = false;
+                wsClient.sendTypingStop(channelId);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                
                 const optimisticMsg: Message = {
                     id: Date.now().toString(),
                     senderUsername: useAuthStore.getState().username || 'Unknown',
@@ -114,11 +155,20 @@ const ChatArea: React.FC = () => {
         }
     };
 
+    const handleDeleteMessage = async (messageId: string) => {
+        if (!channelId) return;
+        try {
+            await axiosClient.delete(`/channels/${channelId}/messages/${messageId}`);
+            setMessages(prev => prev.filter(m => m.id !== messageId));
+            toast.info('Message deleted');
+        } catch (e) {
+            toast.error('Failed to delete message');
+        }
+    };
+
     const handleSendGif = (url: string) => {
         if (channelId) {
             wsClient.sendMessage(channelId, url);
-
-            // Optimistic UI update
             const optimisticMsg: Message = {
                 id: Date.now().toString(),
                 senderUsername: useAuthStore.getState().username || 'Unknown',
@@ -139,31 +189,50 @@ const ChatArea: React.FC = () => {
     };
 
     const isGifUrl = (url: string) => url.startsWith('http') && url.includes('.gif');
+    const currentUsername = useAuthStore.getState().username;
 
     return (
         <div className="chat-container">
             <div className="chat-topbar">
                 <div className="chat-topbar-title">
                     <Menu className="mobile-menu-btn" size={24} onClick={toggleMobileSidebar} />
-                    <Hash size={24} color="var(--text-muted)" />
-                    {channelName}
+                    <Hash size={24} className="text-[var(--text-muted)]" />
+                    <span className="font-semibold">{channelName}</span>
                 </div>
                 <div className="chat-search">
                      <input type="text" placeholder="Search" />
-                     <Search size={16} color="var(--text-muted)" />
+                     <Search size={16} className="text-[var(--text-muted)]" />
                 </div>
             </div>
             
             <div className="chat-messages">
                  {messages.map((m) => (
-                   <div key={m.id} className="message-wrapper">
-                        <div className="message-avatar">{m.senderUsername.substring(0, 1).toUpperCase()}</div>
+                   <div key={m.id} className="message-wrapper group">
+                        <Avatar className="h-10 w-10 bg-gradient-to-br from-[var(--brand)] to-[#7c6cf0] shrink-0">
+                            <AvatarFallback className="bg-transparent text-white font-bold text-sm">
+                                {m.senderUsername.substring(0, 1).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
                         <div className="message-content">
                             <div className="message-header">
                                 <span className="message-author">{m.senderUsername}</span>
                                 <span className="message-timestamp">
                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
+                                {/* Delete button — only for own messages */}
+                                {m.senderUsername === currentUsername && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button 
+                                              className="message-delete-btn" 
+                                              onClick={() => handleDeleteMessage(m.id)}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">Delete Message</TooltipContent>
+                                    </Tooltip>
+                                )}
                             </div>
                             <div className="message-body">
                                 {isGifUrl(m.content) ? (
@@ -177,13 +246,30 @@ const ChatArea: React.FC = () => {
                  ))}
                  
                  {messages.length === 0 && channelId && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: '8px' }}>
-                        <Hash size={48} style={{ opacity: 0.3 }} />
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-header)' }}>Welcome to #{channelName}!</div>
-                        <div style={{ fontSize: '14px' }}>This is the start of the #{channelName} channel.</div>
+                    <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] gap-2">
+                        <Hash size={48} className="opacity-30" />
+                        <div className="text-xl font-bold text-[var(--text-header)]">Welcome to #{channelName}!</div>
+                        <div className="text-sm">This is the start of the #{channelName} channel.</div>
                     </div>
                  )}
             </div>
+
+            {/* Typing Indicator */}
+            {typingUsers.length > 0 && (
+                <div className="typing-indicator">
+                    <div className="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span className="typing-text">
+                        {typingUsers.length === 1 
+                            ? `${typingUsers[0]} is typing...` 
+                            : typingUsers.length === 2 
+                                ? `${typingUsers[0]} and ${typingUsers[1]} are typing...`
+                                : `${typingUsers[0]} and ${typingUsers.length - 1} others are typing...`
+                        }
+                    </span>
+                </div>
+            )}
 
             <div className="chat-input-wrapper">
                 <div className="chat-input-box">
@@ -192,26 +278,39 @@ const ChatArea: React.FC = () => {
                       type="text" 
                       placeholder={`Message #${channelName}`} 
                       value={msg}
-                      onChange={e => setMsg(e.target.value)}
+                      onChange={e => { setMsg(e.target.value); handleTyping(); }}
                       onKeyDown={handleSendMessage}
                     />
-                    {/* Action Icons Toolbar */}
                     <div className="chat-input-actions">
-                        <Gift 
-                            size={22} 
-                            className="action-icon" 
-                            onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false); }} 
-                        />
-                        <Sticker size={22} className="action-icon" />
-                        <Smile 
-                            size={22} 
-                            className="action-icon" 
-                            onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false); }} 
-                        />
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Gift 
+                                    size={22} 
+                                    className="action-icon" 
+                                    onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false); }} 
+                                />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Send GIF</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Sticker size={22} className="action-icon" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Stickers</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Smile 
+                                    size={22} 
+                                    className="action-icon" 
+                                    onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false); }} 
+                                />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Emoji</TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
                 
-                {/* Pickers Popup */}
                 {(showEmojiPicker || showGifPicker) && (
                     <div className="chat-pickers-container">
                         {showGifPicker && (

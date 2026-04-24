@@ -41,6 +41,9 @@ function saveServers() {
     fs.writeFileSync(SERVERS_FILE, JSON.stringify(SERVERS_DATA, null, 2));
 }
 
+// Online presence tracking
+const onlineUsers = new Map(); // userId -> { username, socketId }
+
 // Simple Mock Auth Middleware
 const requireAuth = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -108,6 +111,35 @@ app.get('/api/channels/:channelId/messages', (req, res) => {
     }
 });
 
+// Delete a message
+app.delete('/api/channels/:channelId/messages/:messageId', requireAuth, (req, res) => {
+    try {
+        let chats = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const msgIdx = chats.findIndex(c => c.id === req.params.messageId && c.channelId === req.params.channelId);
+        
+        if (msgIdx === -1) return res.status(404).json({ message: 'Message not found' });
+        
+        const msg = chats[msgIdx];
+        if (msg.senderUsername !== req.user.username) {
+            return res.status(403).json({ message: 'You can only delete your own messages' });
+        }
+        
+        chats.splice(msgIdx, 1);
+        fs.writeFileSync(DB_FILE, JSON.stringify(chats, null, 2));
+        
+        // Broadcast deletion to all users in channel
+        io.to(`channel_${req.params.channelId}`).emit('message_deleted', {
+            messageId: req.params.messageId,
+            channelId: req.params.channelId
+        });
+        
+        console.log(`[CHAT] ${req.user.username} deleted message ${req.params.messageId}`);
+        res.json({ message: 'Message deleted' });
+    } catch(e) {
+        res.status(500).json({ message: 'Failed to delete message' });
+    }
+});
+
 // =======================
 // SERVER ROUTES
 // =======================
@@ -146,10 +178,13 @@ app.get('/api/servers/:id', requireAuth, (req, res) => {
     const server = SERVERS_DATA.servers.find(s => s.id === req.params.id);
     if (!server) return res.status(404).json({ message: 'Server not found' });
     
-    // Resolve member usernames
+    // Resolve member usernames + online status
     const memberDetails = server.members.map(memberId => {
         const user = Object.values(MOCK_USERS).find(u => u.id === memberId);
-        return user ? { id: user.id, username: user.username } : { id: memberId, username: 'Unknown' };
+        const isOnline = onlineUsers.has(memberId);
+        return user 
+            ? { id: user.id, username: user.username, isOnline } 
+            : { id: memberId, username: 'Unknown', isOnline: false };
     });
 
     res.json({
@@ -159,6 +194,41 @@ app.get('/api/servers/:id', requireAuth, (req, res) => {
         channels: server.channels,
         members: memberDetails,
         ownerId: server.ownerId
+    });
+});
+
+// Create a new server
+app.post('/api/servers', requireAuth, (req, res) => {
+    const { name, icon } = req.body;
+    if (!name || name.trim().length === 0) return res.status(400).json({ message: 'Server name is required' });
+    if (name.trim().length > 50) return res.status(400).json({ message: 'Server name too long (max 50 chars)' });
+    
+    const serverId = 'server_' + Date.now();
+    const newServer = {
+        id: serverId,
+        name: name.trim(),
+        icon: icon || name.trim().charAt(0).toUpperCase(),
+        channels: [
+            { id: `${serverId}_general`, name: 'general', type: 'text' },
+            { id: `${serverId}_chat`, name: 'chat', type: 'text' }
+        ],
+        members: [req.user.userId],
+        ownerId: req.user.userId
+    };
+    
+    SERVERS_DATA.servers.push(newServer);
+    saveServers();
+    
+    console.log(`[SERVER] ${req.user.username} created server "${name}"`);
+    res.status(201).json({ 
+        message: `Server "${name}" created!`,
+        server: {
+            id: newServer.id,
+            name: newServer.name,
+            icon: newServer.icon,
+            channelCount: newServer.channels.length,
+            memberCount: newServer.members.length
+        }
     });
 });
 
@@ -202,7 +272,10 @@ app.get('/api/servers/:id/members', requireAuth, (req, res) => {
     
     const memberDetails = server.members.map(memberId => {
         const user = Object.values(MOCK_USERS).find(u => u.id === memberId);
-        return user ? { id: user.id, username: user.username } : { id: memberId, username: 'Unknown' };
+        const isOnline = onlineUsers.has(memberId);
+        return user 
+            ? { id: user.id, username: user.username, isOnline } 
+            : { id: memberId, username: 'Unknown', isOnline: false };
     });
     
     res.json(memberDetails);
@@ -299,6 +372,17 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`[WS] User connected: ${socket.user.username}`);
+  
+  // Track online presence
+  onlineUsers.set(socket.user.userId, { 
+    username: socket.user.username, 
+    socketId: socket.id 
+  });
+  io.emit('presence_update', { 
+    userId: socket.user.userId, 
+    username: socket.user.username, 
+    status: 'online' 
+  });
 
   socket.on('join_channel', (channelId) => {
     socket.join(`channel_${channelId}`);
@@ -327,8 +411,29 @@ io.on('connection', (socket) => {
     io.to(`channel_${channelId}`).emit('receive_message', message);
   });
 
+  // Typing indicator
+  socket.on('typing_start', (channelId) => {
+    socket.to(`channel_${channelId}`).emit('user_typing', {
+      username: socket.user.username,
+      channelId
+    });
+  });
+
+  socket.on('typing_stop', (channelId) => {
+    socket.to(`channel_${channelId}`).emit('user_stop_typing', {
+      username: socket.user.username,
+      channelId
+    });
+  });
+
   socket.on('disconnect', () => {
     console.log(`[WS] User disconnected: ${socket.user.username}`);
+    onlineUsers.delete(socket.user.userId);
+    io.emit('presence_update', { 
+      userId: socket.user.userId, 
+      username: socket.user.username, 
+      status: 'offline' 
+    });
   });
 });
 
@@ -342,13 +447,17 @@ httpServer.listen(8080, () => {
   console.log('  GET  /api/servers/discover');
   console.log('  GET  /api/servers/mine');
   console.log('  GET  /api/servers/:id');
+  console.log('  POST /api/servers          (CREATE)');
   console.log('  POST /api/servers/:id/join');
   console.log('  POST /api/servers/:id/leave');
   console.log('  GET  /api/servers/:id/members');
   console.log('  GET  /api/channels/:id/messages');
+  console.log('  DEL  /api/channels/:id/messages/:mid');
   console.log('  GET  /api/friends');
   console.log('  POST /api/friends');
   console.log('  POST /api/friends/accept');
+  console.log('  WS   typing_start / typing_stop');
+  console.log('  WS   presence_update');
   console.log('============================================');
   console.log('Test user: priyanshu / 1234');
   console.log('============================================');

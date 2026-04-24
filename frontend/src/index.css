@@ -1,36 +1,77 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ═══════════════════════════════════════
+   Synapse Dark Theme — shadcn/ui Overrides
+   Always dark mode, mapped to our Discord-inspired palette.
+   ═══════════════════════════════════════ */
 :root {
-  /* Premium Dark Theme Palette */
-  --bg-primary: #1e1f22; /* Main chat area */
-  --bg-secondary: #2b2d31; /* Server/DM sidebar */
-  --bg-tertiary: #1e1f22; /* Inner sidebars */
-  --bg-quaternary: #313338; /* Message input / selected elements */
-  
-  --bg-guilds: #111214; /* Leftmost server bar */
-  
+  /* === Our custom palette === */
+  --bg-primary: #1e1f22;
+  --bg-secondary: #2b2d31;
+  --bg-tertiary: #1e1f22;
+  --bg-quaternary: #313338;
+  --bg-guilds: #111214;
+
   --text-normal: #dbdee1;
   --text-muted: #949ba4;
   --text-header: #f2f3f5;
-  
-  --brand: #5865f2;     /* Blurple */
+
+  --brand: #5865f2;
   --brand-hover: #4752c4;
-  
+  --brand-light: rgba(88, 101, 242, 0.15);
+
   --button-danger: #da373c;
   --button-danger-hover: #a12828;
-  
+
   --green: #23a559;
   --green-hover: #1d884a;
 
-  /* Modals / Cards */
   --bg-modal: #313338;
   --input-bg: #1e1f22;
-  
+
   --font-primary: 'Inter', sans-serif;
   --transition-fast: 0.15s ease-in-out;
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 16px;
+
+  --glow-brand: 0 0 20px rgba(88, 101, 242, 0.3);
+  --glow-green: 0 0 20px rgba(35, 165, 89, 0.3);
+
+  /* === shadcn/ui token overrides — always dark === */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.92 0 0);
+  --card: oklch(0.19 0.005 285);
+  --card-foreground: oklch(0.92 0 0);
+  --popover: oklch(0.19 0.005 285);
+  --popover-foreground: oklch(0.92 0 0);
+  --primary: oklch(0.58 0.22 264);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.25 0.005 285);
+  --secondary-foreground: oklch(0.92 0 0);
+  --muted: oklch(0.25 0.005 285);
+  --muted-foreground: oklch(0.62 0 0);
+  --accent: oklch(0.25 0.005 285);
+  --accent-foreground: oklch(0.92 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.58 0.22 264);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.17 0.005 285);
+  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar-primary: oklch(0.58 0.22 264);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.25 0.005 285);
+  --sidebar-accent-foreground: oklch(0.92 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.58 0.22 264);
 }
 
 *, *::before, *::after {
@@ -50,6 +91,24 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ═══════════════════════════════════════
+   Smooth Scrollbar Globally
+   ═══════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255,255,255,0.15);
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
 input, button, textarea {
   font-family: inherit;
   border: none;
@@ -59,7 +118,7 @@ input, button, textarea {
 button {
   cursor: pointer;
   border-radius: var(--border-radius-sm);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-smooth);
 }
 
 a {
@@ -71,7 +130,9 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Base Input styling */
+/* ═══════════════════════════════════════
+   Base Input styling
+   ═══════════════════════════════════════ */
 .text-input {
   width: 100%;
   padding: 12px;
@@ -79,30 +140,56 @@ a:hover {
   border-radius: var(--border-radius-sm);
   color: var(--text-normal);
   font-size: 14px;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   border: 1px solid transparent;
 }
 
 .text-input:focus {
   border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.15);
 }
 
-/* Base button */
+/* ═══════════════════════════════════════
+   Base Buttons — Premium
+   ═══════════════════════════════════════ */
 .btn-primary {
   width: 100%;
   padding: 12px;
-  background-color: var(--brand);
+  background: linear-gradient(135deg, var(--brand), #7c6cf0);
   color: white;
   font-size: 16px;
   font-weight: 600;
   border-radius: var(--border-radius-sm);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-smooth);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
 }
 
 .btn-primary:hover {
-  background-color: var(--brand-hover);
+  background: linear-gradient(135deg, var(--brand-hover), #6b5ce7);
+  transform: translateY(-1px);
+  box-shadow: var(--glow-brand);
 }
 
-/* Utility to ensure app fills screen */
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════
+   App Container
+   ═══════════════════════════════════════ */
 .app-container {
   display: flex;
   height: 100dvh;
@@ -111,33 +198,60 @@ a:hover {
   overflow: hidden;
 }
 
+/* ═══════════════════════════════════════
+   Modal Overlay (shared by custom modals)
+   ═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-close {
+  background: none;
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.modal-close:hover {
+  color: white;
+  background-color: rgba(255,255,255,0.06);
+}
+
+/* ═══════════════════════════════════════
+   Mobile Responsive System
+   ═══════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Sidebar Drawer styling */
   .guild-sidebar {
     position: absolute !important;
     left: -72px;
     z-index: 50;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .dm-sidebar, .channel-sidebar {
     position: absolute !important;
-    left: -240px; /* Hidden offscreen by default */
+    left: -240px;
     z-index: 50;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 4px 0 24px rgba(0,0,0,0.5);
   }
 
-  /* When mobileMenuOpen is active, shift them right */
   .app-container.mobile-open .guild-sidebar {
     transform: translateX(72px);
   }
   .app-container.mobile-open .dm-sidebar, 
   .app-container.mobile-open .channel-sidebar {
-    transform: translateX(312px); /* 72 + 240 */
+    transform: translateX(312px);
   }
 
-  /* Chat container takes full width initially, but on open, maybe darken it */
   .chat-container {
     width: 100%;
   }
@@ -145,7 +259,7 @@ a:hover {
   .mobile-menu-btn {
     display: block !important;
   }
-  
+
   .mobile-backdrop {
     display: block !important;
     position: absolute;
@@ -153,6 +267,7 @@ a:hover {
     background: rgba(0,0,0,0.6);
     z-index: 40;
     animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(2px);
   }
 }
 
@@ -166,7 +281,88 @@ a:hover {
   display: none;
 }
 
+/* ═══════════════════════════════════════
+   Shared Animations
+   ═══════════════════════════════════════ */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════
+   shadcn/ui theme mapping
+   ═══════════════════════════════════════ */
+@theme inline {
+  --font-heading: var(--font-primary);
+  --font-sans: var(--font-primary);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
 }

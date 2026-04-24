@@ -1,15 +1,25 @@
 import React, { useEffect } from 'react';
-import { Hash, ChevronDown, Mic, Headphones, Settings } from 'lucide-react';
+import { Hash, ChevronDown, Settings, LogOut, Bell, UserPlus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServerStore } from '../../store/useServerStore';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { toast } from 'sonner';
 import './ChannelSidebar.css';
 
 const ChannelSidebar: React.FC = () => {
     const { username } = useAuthStore();
     const navigate = useNavigate();
     const { guildId, channelId } = useParams<{ guildId: string; channelId?: string }>();
-    const { currentServer, fetchServerDetails } = useServerStore();
+    const { currentServer, fetchServerDetails, leaveServer, fetchMyServers } = useServerStore();
 
     useEffect(() => {
         if (guildId) {
@@ -20,12 +30,45 @@ const ChannelSidebar: React.FC = () => {
     const channels = currentServer?.channels || [];
     const serverName = currentServer?.name || 'Server';
 
+    const handleLeaveServer = async () => {
+        if (!guildId) return;
+        
+        try {
+            await leaveServer(guildId);
+            await fetchMyServers();
+            toast.success(`Left "${serverName}"`, { description: 'You have left the server.' });
+            navigate('/channels/@me');
+        } catch (e) {
+            toast.error('Failed to leave server');
+        }
+    };
+
     return (
         <aside className="channel-sidebar">
-            <div className="channel-sidebar-header">
-                <div>{serverName}</div>
-                <ChevronDown size={18} />
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger className="channel-sidebar-header w-full">
+                    <div className="truncate font-semibold">{serverName}</div>
+                    <ChevronDown size={18} className="shrink-0 transition-transform duration-200 data-[state=open]:rotate-180" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 mx-2">
+                    <DropdownMenuItem className="gap-2 cursor-pointer">
+                        <UserPlus size={16} />
+                        Invite People
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="gap-2 cursor-pointer">
+                        <Bell size={16} />
+                        Notification Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                        onClick={handleLeaveServer}
+                    >
+                        <LogOut size={16} />
+                        Leave Server
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className="channel-section" style={{ flex: 1, overflowY: 'auto' }}>
                 <div className="channel-category">TEXT CHANNELS</div>
@@ -48,16 +91,22 @@ const ChannelSidebar: React.FC = () => {
 
             {/* User Control Dock */}
             <div className="user-profile-panel">
-                 <div className="user-profile-avatar">
-                     {username ? username.charAt(0).toUpperCase() : 'U'}
-                     <div className="user-profile-status" />
-                 </div>
+                 <Avatar className="h-8 w-8 bg-gradient-to-br from-[var(--brand)] to-[#7c6cf0]">
+                     <AvatarFallback className="bg-transparent text-white font-bold text-sm">
+                         {username ? username.charAt(0).toUpperCase() : 'U'}
+                     </AvatarFallback>
+                 </Avatar>
                  <div className="user-profile-info">
                      <div className="user-name">{username || 'User'}</div>
                      <div className="user-tag">Online</div>
                  </div>
                  <div className="user-profile-controls">
-                     <Settings size={24} className="control-icon" onClick={() => navigate('/settings')} title="User Settings" />
+                     <Tooltip>
+                         <TooltipTrigger asChild>
+                             <Settings size={20} className="control-icon" onClick={() => navigate('/settings')} />
+                         </TooltipTrigger>
+                         <TooltipContent side="top">User Settings</TooltipContent>
+                     </Tooltip>
                  </div>
             </div>
         </aside>
