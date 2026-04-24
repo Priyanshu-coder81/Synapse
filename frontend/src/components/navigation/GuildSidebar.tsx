@@ -78,11 +78,13 @@ const GuildSidebar: React.FC = () => {
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <div className="guild-icon add-server-btn">
-                    <Plus size={24} />
-                  </div>
-                </DropdownMenuTrigger>
+                <div style={{ display: 'flex' }}>
+                  <DropdownMenuTrigger asChild>
+                    <div className="guild-icon add-server-btn">
+                      <Plus size={24} />
+                    </div>
+                  </DropdownMenuTrigger>
+                </div>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-semibold">
                 Add a Server

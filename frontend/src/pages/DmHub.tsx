@@ -19,9 +19,10 @@ const DmHub: React.FC = () => {
   const fetchFriends = async () => {
     try {
       const res = await axiosClient.get('/friends');
-      setFriendsList(res.data);
+      setFriendsList(Array.isArray(res.data) ? res.data : (res.data.friends || []));
     } catch (e) {
       console.error(e);
+      setFriendsList([]);
     }
   };
 
